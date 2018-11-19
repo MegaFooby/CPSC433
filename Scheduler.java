@@ -48,7 +48,7 @@ public class Scheduler {
 	}
 	
 	public static void main(String args[]) {
-		Slot solution = new Slot[
+		Slot solution = new Slot[38];
 	}
 	
 	public static Slot[] and_tree(Slot current[], Vector<Course> unassigned) {
