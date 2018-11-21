@@ -94,44 +94,35 @@ public class Scheduler {
 		lectuttime_collisions.put(21400, 21400);lectuttime_collisions.put(21400, 21500);lectuttime_collisions.put(21530, 21500);lectuttime_collisions.put(21530, 21600);
 		lectuttime_collisions.put(21700, 21700);lectuttime_collisions.put(21700, 21800);lectuttime_collisions.put(21830, 21800);lectuttime_collisions.put(21830, 21900);
 		
-		Slot foo[] = new Slot[times.length];
-		for(int i = 0; i < times.length; i++) {
-			foo[i] = new Slot(times[i]);
-		}
+		
 		Vector<Course> to_assign = new Vector();
+		Fact foo = new Fact(to_assign);
 		//parse input file
-		Slot solution[] = and_tree(foo, to_assign);
+		Fact solution = and_tree(foo);
 		//print or save solution
 	}
 	
-	public static Slot[] and_tree(Slot current[], Vector<Course> unassigned) {
+	public static Fact and_tree(Fact current) {
 		//return if there is nothing left to add
-		if(unassigned.size() == 0) {
+		if(current.unassigned.size() == 0) {
 			return current;
 		}
 		//find all possible combinations for adding 1 course
-		Vector<Slot[]> possible = new Vector();
-		for(int i = 0; i < current.length; i++) {
+		Vector<Fact> possible = new Vector();
+		for(int i = 0; i < current.slots.length; i++) {
 			//copy so we don't alter the current values
-			Slot tmp_cur[] = new Slot[current.length];
-			for(int j = 0; j < current.length; j++) {
-				tmp_cur[j] = current[j].copy();
-			}
-			Vector<Course> tmp_unas = (Vector<Course>)unassigned.clone();
-			
-			//pop off unassigned and call the function again
-			tmp_cur[i].addCourse(tmp_unas.remove(0));
-			Slot tmp[] = and_tree(tmp_cur, tmp_unas);
+			Fact tmp_cur = current.copy();
+			tmp_cur.assign(i, 0);
+			Fact tmp = and_tree(tmp_cur);
 			if(tmp != null) {//don't add if null
 				possible.add(tmp);
 			}
 		}
 		//evaluate and find the best
-		Slot solution[] = null;
-		int best = Integer.MIN_VALUE;
+		Fact solution = null;
 		for(int i = 0; i < possible.size(); i++) {
-			int cur_eval = evaluate(possible.get(i));
-			if(cur_eval > best) {
+			evaluate(possible.get(i));
+			if(possible.get(i).score > solution.score) {
 				solution = possible.get(i);
 			}
 		}
@@ -139,8 +130,8 @@ public class Scheduler {
 	}
 	
 	//evaluate all hard constraint violations to Integer.MIN_VALUE
-	public static int evaluate(Slot[] current) {
-		return 0;
+	public static void evaluate(Fact current) {
+		
 	}
 }
 
@@ -189,6 +180,10 @@ class Fact {
 	
 	public Fact(Vector<Course> unassigned) {
 		this.unassigned = (Vector<Course>)unassigned.clone();
+		slots = new Slot[Scheduler.times.length];
+		for(int i = 0; i < Scheduler.times.length; i++) {
+			slots[i] = new Slot(Scheduler.times[i]);
+		}
 	}
 	
 	public Fact copy() {
@@ -199,5 +194,9 @@ class Fact {
 			tmp.slots[i] = this.slots[i].copy();
 		}
 		return tmp;
+	}
+	
+	public void assign(int slotnum, int coursenum) {
+		this.slots[slotnum].course.add(this.unassigned.remove(coursenum));
 	}
 }
