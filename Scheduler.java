@@ -6,6 +6,7 @@ public class Scheduler {
 	public static HashMap<Integer, Integer> lectime_collisions = new HashMap(21);
 	public static HashMap<Integer, Integer> tuttime_collisions = new HashMap(31);
 	public static HashMap<Integer, Integer> lectuttime_collisions = new HashMap(41);
+	public static boolean debug = false;
 	
 	/*public static final int lectime_collisions[][] = {
 		//monday
@@ -94,9 +95,16 @@ public class Scheduler {
 		lectuttime_collisions.put(21400, 21400);lectuttime_collisions.put(21400, 21500);lectuttime_collisions.put(21530, 21500);lectuttime_collisions.put(21530, 21600);
 		lectuttime_collisions.put(21700, 21700);lectuttime_collisions.put(21700, 21800);lectuttime_collisions.put(21830, 21800);lectuttime_collisions.put(21830, 21900);
 		
+		if(args[0].equalsIgnoreCase("DEBUG")) debug = true;
 		
+		Vector<PartAssign> partial = new Vector();
 		Vector<Course> to_assign = new Vector();
 		Fact foo = new Fact(to_assign);
+		
+		for(int i = 0; i < partial.size(); i++) {
+			foo.assign(partial.get(i).time, partial.get(i).course);
+		}
+		
 		//parse input file
 		Fact solution = and_tree(foo);
 		//print or save solution
@@ -119,6 +127,7 @@ public class Scheduler {
 			}
 		}
 		//evaluate and find the best
+		//need to change this so it doesn't create and evaluate every single possibility
 		Fact solution = null;
 		for(int i = 0; i < possible.size(); i++) {
 			evaluate(possible.get(i));
@@ -138,10 +147,14 @@ public class Scheduler {
 class Slot {
 	public int time;
 	public Vector<Course> course;
+	public int coursemin;
+	public int coursemax;
 	
 	public Slot(int time) {
 		this.time = time;
 		course = new Vector();
+		coursemax = 0;
+		coursemin = 0;
 	}
 	
 	public Slot(Vector<Course> courses, int time) {
@@ -171,6 +184,10 @@ class Course {
 		this.lecture_num = lecture_num;
 		this.is_lecture = is_lecture;
 	}
+	public boolean equals(Course compare) {
+		return (this.name.equals(compare.name) && this.number == compare.number &&
+		this.lecture_num == compare.lecture_num && this.is_lecture == compare.is_lecture);
+	}
 }
 
 class Fact {
@@ -198,5 +215,33 @@ class Fact {
 	
 	public void assign(int slotnum, int coursenum) {
 		this.slots[slotnum].course.add(this.unassigned.remove(coursenum));
+	}
+	
+	public boolean assign(int time, Course course) {
+		int slotnum, coursenum;
+		for(slotnum = 0; slotnum < slots.length; slotnum++) {
+			if(time == slots[slotnum].time) {
+				break;
+			}
+		}
+		if(slotnum == slots.length) return false;
+		for(coursenum = 0; coursenum < unassigned.size(); coursenum++) {
+			if(course == unassigned.get(coursenum) ||course.equals(unassigned.get(coursenum))) {
+				break;
+			}
+		}
+		if(coursenum == unassigned.size()) return false;
+		this.slots[slotnum].course.add(this.unassigned.remove(coursenum));
+		return true;
+	}
+}
+
+class PartAssign {
+	public Course course;
+	public int time;
+	
+	public PartAssign(Course course, int time) {
+		this.course = course;
+		this.time = time;
 	}
 }
