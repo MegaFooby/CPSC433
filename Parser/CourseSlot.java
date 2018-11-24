@@ -1,3 +1,9 @@
+/* Course Slot
+* A custom class to ease the storing of courses in a data structure
+* Takes an abstract data type of form: Day StartTime CourseMax CourseMinn
+* Contains get methods for all private variables
+ */
+
 public class CourseSlot<Day, Start, Max, Min> {
 
     private final Day day;

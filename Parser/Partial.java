@@ -1,3 +1,9 @@
+/* Partial
+ * A custom class used to store information about partial solutions
+ * Takes a string as input
+ * Contains get methods for all private variables
+ */
+
 public class Partial {
 
     private final String day;

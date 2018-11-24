@@ -1,3 +1,9 @@
+/* Not Compatible
+ * A custom class used to store information about courses and labs which should not be together
+ * Takes a string as input
+ * Contains get methods for all private variables
+ */
+
 public class NotComp {
 
 

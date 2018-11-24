@@ -1,3 +1,10 @@
+/* Lab Slot
+ * A custom class to ease the storing of labs in a data structure
+ * Takes an abstract data type of form: Day StartTime CourseMax CourseMinn
+ * Contains get methods for all private variables
+ */
+
+
 public class LabSlot<Day, Start, Max, Min> {
 
     private final Day day;

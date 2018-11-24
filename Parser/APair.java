@@ -1,3 +1,11 @@
+/* APair
+* Custom class to represent pairs of (class, labs), (class, class), or (lab, lab)
+* Takes a string which is of the form: Faculty Course# LEC LecSec TUT TutSec, Faculty Course# LEC LecSec TUT TutSec
+* Contains get methods for each private variable
+ */
+
+
+
 public class APair {
 
     private String fac1;
@@ -44,4 +52,12 @@ public class APair {
             this.tsec2 = Integer.parseInt(arr2[3]);;
         }
     }
+    public String getFaculty1(){ return this.fac1; }
+    public String getFaculty2() { return this.fac2; }
+    public int getCourseNum1() { return this.cnum1; }
+    public int getCourseNum2() { return this.cnum2; }
+    public int getLecSec1() { return this.lsec1; }
+    public int getLecSec2() { return this.lsec2; }
+    public int getTutSec1() { return this.tsec1; }
+    public int getTutSec2() { return this.tsec2; }
 }

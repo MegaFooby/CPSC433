@@ -1,3 +1,10 @@
+/* Course
+* A custom class used to store information about courses
+* Takes a string of form: Faculty Course# LEC LecNum
+* Contains get methods for all private variables
+ */
+
+
 public class Course {
 
 

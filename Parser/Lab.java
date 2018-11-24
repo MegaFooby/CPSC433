@@ -1,3 +1,9 @@
+/* Lab
+* A custom class used to store information about labs
+* Takes a string as input of form: Faculty Course# Lec Lec# TUT Tut# OR Faculty Course# TUT Tut#
+* Contains get methods for all private variables
+ */
+
 public class Lab {
 
 

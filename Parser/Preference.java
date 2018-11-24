@@ -1,3 +1,9 @@
+/* Preference
+ * A custom class used to store information about preferred times for courses and labs
+ * Takes a string as input of form: Day Time Faculty Course# LEC Lec# TUT Tut# Weight
+ * Contains get methods for all private variables
+ */
+
 public class Preference<String, Integer> {
     private final String day;
     private final String time;

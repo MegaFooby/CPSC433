@@ -5,7 +5,7 @@ public class Main {
 	        System.out.println("Usage: java Main filename.txt");
         }
         else{
-            Parser parser = new Parser(args[0]);
+            Parser parser = new Parser(args[0]); //Creates new instance of a parser to read in data
         }
     }
 }

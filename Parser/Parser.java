@@ -3,6 +3,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+
+/* Parser
+* This is responsible for most of the logic for reading and storing the data from a text file to be used to design
+* An optimal solution to our scheduling problem
+* This allows for ease of access to all the data structures and the data within
+* Takes a filename as input
+ */
 public class Parser {
     String name;
     List<CourseSlot<String, String, String, String>> courseSlotList= new ArrayList<>();

@@ -1,3 +1,9 @@
+/* Unwanted
+ * A custom class used to store information about unwanted courses/labs
+ * Takes a string as input
+ * Contains get methods for all private variables
+ */
+
 public class Unwanted {
     private final String faculty;
     private final int cnum;
