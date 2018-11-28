@@ -7,6 +7,7 @@ public class Scheduler {
 	public static HashMap<Integer, Integer> tuttime_collisions = new HashMap(31);
 	public static HashMap<Integer, Integer> lectuttime_collisions = new HashMap(41);
 	public static boolean debug = false;
+	public static int best = Integer.MIN_VALUE;
 	
 	/*public static final int lectime_collisions[][] = {
 		//monday
@@ -120,9 +121,10 @@ public class Scheduler {
 		for(int i = 0; i < current.slots.length; i++) {
 			//copy so we don't alter the current values
 			Fact tmp_cur = current.copy();
-			tmp_cur.assign(i, 0);
+			//tmp_cur.assign(i, 0);
 			Fact tmp = and_tree(tmp_cur);
-			if(tmp != null) {//don't add if null
+			evaluate(tmp, i);
+			if(tmp != null && tmp.score > best) {//don't add if null or worse
 				possible.add(tmp);
 			}
 		}
@@ -139,8 +141,9 @@ public class Scheduler {
 	}
 	
 	//evaluate all hard constraint violations to Integer.MIN_VALUE
-	public static void evaluate(Fact current) {
-		
+	//Also just evaluate with respect to the current class in the current slot
+	public static void evaluate(Fact current, int slot) {
+		current.assign(slot, 0); //maybe change 0 to current.unassigned.size()
 	}
 }
 
