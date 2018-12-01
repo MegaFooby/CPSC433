@@ -144,6 +144,23 @@ public class Scheduler {
 	//Also just evaluate with respect to the current class in the current slot
 	public static void evaluate(Fact current, int slot) {
 		current.assign(slot, current.unassigned.size());
+		//if there are too many courses in the slot
+		int cnum = 0, lnum = 0;
+		for(int i = 0; i < current.slots[slot].course.size(); i++) {
+			if(current.slots[slot].course.get(i).is_lecture) {
+				cnum++;
+			} else {
+				lnum++
+			}
+		}
+		if(current.slots[slot].coursemax < cnum) {
+			current.score = Integer.MIN_VALUE;
+			return;
+		}
+		if(current.slots[slot].labmax < lnum) {
+			current.score = Integer.MIN_VALUE;
+			return;
+		}
 	}
 }
 
@@ -237,6 +254,7 @@ class Fact {
 		this.slots[slotnum].course.add(this.unassigned.remove(coursenum));
 	}
 	
+	//try to use the other one because this is slow
 	public boolean assign(int time, Course course) {
 		int slotnum, coursenum;
 		for(slotnum = 0; slotnum < slots.length; slotnum++) {
