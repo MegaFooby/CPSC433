@@ -96,14 +96,15 @@ public class Scheduler {
 		lectuttime_collisions.put(21400, 21400);lectuttime_collisions.put(21400, 21500);lectuttime_collisions.put(21530, 21500);lectuttime_collisions.put(21530, 21600);
 		lectuttime_collisions.put(21700, 21700);lectuttime_collisions.put(21700, 21800);lectuttime_collisions.put(21830, 21800);lectuttime_collisions.put(21830, 21900);
 		
-		if(args[0].equalsIgnoreCase("DEBUG")) debug = true;
+		if(args[1].equalsIgnoreCase("DEBUG")) debug = true;
 		
-		Vector<PartAssign> partial = new Vector();
-		Vector<Course> to_assign = new Vector();
-		Fact foo = new Fact(to_assign);
+		Parser parse = new Parser(args[0]);
 		
-		for(int i = 0; i < partial.size(); i++) {
-			foo.assign(partial.get(i).time, partial.get(i).course);
+		Fact foo = new Fact(parse.courses);
+		foo.slots = (Slot[])parse.slots.toArray();
+		
+		for(int i = 0; i < parse.partial.size(); i++) {
+			foo.assign(parse.partial.get(i).time, parse.partial.get(i).course);
 		}
 		
 		//parse input file
@@ -122,17 +123,16 @@ public class Scheduler {
 			//copy so we don't alter the current values
 			Fact tmp_cur = current.copy();
 			//tmp_cur.assign(i, 0);
-			Fact tmp = and_tree(tmp_cur);
-			evaluate(tmp, i);
-			if(tmp != null && tmp.score > best) {//don't add if null or worse
-				possible.add(tmp);
+			//Fact tmp = and_tree(tmp_cur);
+			evaluate(tmp_cur, i);
+			if(tmp_cur != null && tmp_cur.score > best) {//don't add if null or worse
+				possible.add(and_tree(tmp_cur));
 			}
 		}
 		//evaluate and find the best
 		//need to change this so it doesn't create and evaluate every single possibility
 		Fact solution = null;
 		for(int i = 0; i < possible.size(); i++) {
-			evaluate(possible.get(i));
 			if(possible.get(i).score > solution.score) {
 				solution = possible.get(i);
 			}
@@ -143,7 +143,7 @@ public class Scheduler {
 	//evaluate all hard constraint violations to Integer.MIN_VALUE
 	//Also just evaluate with respect to the current class in the current slot
 	public static void evaluate(Fact current, int slot) {
-		current.assign(slot, 0); //maybe change 0 to current.unassigned.size()
+		current.assign(slot, current.unassigned.size());
 	}
 }
 
@@ -152,17 +152,34 @@ class Slot {
 	public Vector<Course> course;
 	public int coursemin;
 	public int coursemax;
+	public int labmin;
+	public int labmax;
 	
 	public Slot(int time) {
 		this.time = time;
 		course = new Vector();
 		coursemax = 0;
 		coursemin = 0;
+		labmax = 0;
+		labmin = 0;
 	}
 	
 	public Slot(Vector<Course> courses, int time) {
 		this.time = time;
 		course = courses;
+		coursemax = 0;
+		coursemin = 0;
+		labmax = 0;
+		labmin = 0;
+	}
+	
+	public Slot(Vector<Course> courses, int time, int cmin, int cmax, int lmin, int lmax) {
+		this.time = time;
+		course = courses;
+		coursemax = cmax;
+		coursemin = cmin;
+		labmax = lmax;
+		labmin = lmin;
 	}
 	
 	public boolean addCourse(Course toAdd) {
@@ -171,7 +188,7 @@ class Slot {
 	}
 	
 	public Slot copy() {
-		return new Slot((Vector<Course>)this.course.clone(), time);
+		return new Slot((Vector<Course>)this.course.clone(), time, coursemin, coursemax, labmin, labmax);
 	}
 }
 
@@ -236,15 +253,5 @@ class Fact {
 		if(coursenum == unassigned.size()) return false;
 		this.slots[slotnum].course.add(this.unassigned.remove(coursenum));
 		return true;
-	}
-}
-
-class PartAssign {
-	public Course course;
-	public int time;
-	
-	public PartAssign(Course course, int time) {
-		this.course = course;
-		this.time = time;
 	}
 }
