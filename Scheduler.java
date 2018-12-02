@@ -5,7 +5,7 @@ public class Scheduler {
 	//lecture with lecture collisions
 	public static HashMap<Integer, Integer> lectime_collisions = new HashMap(21);
 	public static HashMap<Integer, Integer> tuttime_collisions = new HashMap(31);
-	public static HashMap<Integer, Integer> lectuttime_collisions = new HashMap(41);
+	public static HashMap<Integer, Integer[]> lectuttime_collisions = new HashMap(41);
 	public static boolean debug = false;
 	public static int best = Integer.MIN_VALUE;
 	
@@ -84,17 +84,14 @@ public class Scheduler {
 		tuttime_collisions.put(50800, 50800);tuttime_collisions.put(51000, 51000);tuttime_collisions.put(51200, 51200);tuttime_collisions.put(51400, 51400);
 		tuttime_collisions.put(51600, 51600);
 		
-		lectuttime_collisions.put(10800, 10800);lectuttime_collisions.put(10900, 10900);lectuttime_collisions.put(11000, 11000);lectuttime_collisions.put(11100, 11100);
-		lectuttime_collisions.put(11200, 11200);lectuttime_collisions.put(11300, 11300);lectuttime_collisions.put(11400, 11400);lectuttime_collisions.put(11500, 11500);
-		lectuttime_collisions.put(11600, 11600);lectuttime_collisions.put(11700, 11700);lectuttime_collisions.put(11800, 11800);lectuttime_collisions.put(11900, 11900);
-		lectuttime_collisions.put(12000, 12000);
-		lectuttime_collisions.put(10800, 50800);lectuttime_collisions.put(10900, 50800);lectuttime_collisions.put(11000, 51000);lectuttime_collisions.put(11100, 51000);
-		lectuttime_collisions.put(11200, 51200);lectuttime_collisions.put(11300, 51200);lectuttime_collisions.put(11400, 51400);lectuttime_collisions.put(11500, 51400);
-		lectuttime_collisions.put(11600, 51600);lectuttime_collisions.put(11700, 51600);lectuttime_collisions.put(11800, 51800);lectuttime_collisions.put(11900, 51800);
-		lectuttime_collisions.put(20800, 20800);lectuttime_collisions.put(20800, 20900);lectuttime_collisions.put(20930, 20900);lectuttime_collisions.put(20930, 21000);
-		lectuttime_collisions.put(21100, 21100);lectuttime_collisions.put(21100, 21200);lectuttime_collisions.put(21230, 21200);lectuttime_collisions.put(21230, 21300);
-		lectuttime_collisions.put(21400, 21400);lectuttime_collisions.put(21400, 21500);lectuttime_collisions.put(21530, 21500);lectuttime_collisions.put(21530, 21600);
-		lectuttime_collisions.put(21700, 21700);lectuttime_collisions.put(21700, 21800);lectuttime_collisions.put(21830, 21800);lectuttime_collisions.put(21830, 21900);
+		lectuttime_collisions.put(10800, {10800, 50800});lectuttime_collisions.put(10900, {10900, 50800});lectuttime_collisions.put(11000, {11000, 51000});lectuttime_collisions.put(11100, {11100, 51000});
+		lectuttime_collisions.put(11200, {11200, 51200});lectuttime_collisions.put(11300, {11300, 51200});lectuttime_collisions.put(11400, {11400, 51400});lectuttime_collisions.put(11500, {11500, 51400});
+		lectuttime_collisions.put(11600, {11600, 51600});lectuttime_collisions.put(11700, {11700, 51600});lectuttime_collisions.put(11800, {11800, 51800});lectuttime_collisions.put(11900, {11900, 51800});
+		lectuttime_collisions.put(12000, {12000});
+		lectuttime_collisions.put(20800, {20800, 20900});lectuttime_collisions.put(20930, {20900, 21000});
+		lectuttime_collisions.put(21100, {21100, 21200});lectuttime_collisions.put(21230, {21200, 21300});
+		lectuttime_collisions.put(21400, {21400, 21500});lectuttime_collisions.put(21530, {21500, 21600});
+		lectuttime_collisions.put(21700, {21700, 21800});lectuttime_collisions.put(21830, {21800, 21900});
 		
 		if(args[1].equalsIgnoreCase("DEBUG")) debug = true;
 		
@@ -150,7 +147,7 @@ public class Scheduler {
 			if(current.slots[slot].course.get(i).is_lecture) {
 				cnum++;
 			} else {
-				lnum++
+				lnum++;
 			}
 		}
 		if(current.slots[slot].coursemax < cnum) {
@@ -161,6 +158,7 @@ public class Scheduler {
 			current.score = Integer.MIN_VALUE;
 			return;
 		}
+		
 	}
 }
 
