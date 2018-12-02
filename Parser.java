@@ -10,10 +10,13 @@ public class Parser {
 	public Vector<CourseTime> unwanted = new Vector();//contains unwanted <Course, int time>
 	public Vector<Preference> preferences = new Vector();
 	public Vector<CoursePair> pair = new Vector();
-	public Vector<CourseTime> partial = new Vector();	
+	public Vector<CourseTime> partial = new Vector();
 
 	public static void main(String args[]) {
 		Parser parse = new Parser("deptinst1.txt");
+		for(int i = 0; i < parse.slots.size(); i++) {
+			System.out.println(parse.slots.get(i).time + " " + parse.slots.get(i).labmax);
+		}
 	}
 
 	public Parser(String filename) {
@@ -26,7 +29,7 @@ public class Parser {
 			name = read.readLine();
 			int counter = 0;
 			while(line != null) {
-				line = read.readLine();
+				
 				/*for(int i = 0; i < line.getBytes().length; i++) {
 					System.out.print(line.getBytes()[i] + " ");
 					if(line.getBytes()[i] == 10) {
@@ -45,21 +48,22 @@ public class Parser {
 					case "Pair:": counter = 8; break;
 					case "Partial assignments:": counter = 9; break;
 					default:
-						if(line.length() < linelength[counter] || line.equals("\n")) {
-							break;
-						}
-					switch(counter) {
-						case 1: parse_course_slots(line); break;
-						case 2: parse_lab_slots(line); break;
-						case 3: parse_courses(line); break;
-						case 4: parse_labs(line); break;
-						case 5: parse_not_compatible(line); break;
-						case 6: parse_unwanted(line); break;
-						case 7: parse_preferences(line); break;
-						case 8: parse_pair(line); break;
-						case 9: parse_partial_assignments(line); break;
+					if(line.length() < linelength[counter] || line.equals("\n")) {
+						break;
 					}
 				}
+				switch(counter) {
+					case 1: parse_course_slots(line); break;
+					case 2: parse_lab_slots(line); break;
+					case 3: parse_courses(line); break;
+					case 4: parse_labs(line); break;
+					case 5: parse_not_compatible(line); break;
+					case 6: parse_unwanted(line); break;
+					case 7: parse_preferences(line); break;
+					case 8: parse_pair(line); break;
+					case 9: parse_partial_assignments(line); break;
+				}
+				line = read.readLine();
 			}
 			read.close();
 			filereader.close();
@@ -67,6 +71,7 @@ public class Parser {
 		catch(Exception e) {
 			System.out.println("Failed to open file: " + filename);
 			System.out.println(e);
+			System.out.println(line);
 		}
 	}
 	
@@ -81,17 +86,24 @@ public class Parser {
 		} else {
 			System.out.println("Day " + line.charAt(0) + line.charAt(1) + " not recognized");
 		}
-		if(line.charAt(4) != ' ') {
-			time += 1000* Integer.parseInt(line.substring(4, 5));
+		if(line.charAt(5) == ':') {
+			time += 100* Integer.parseInt(line.substring(4, 5));
+			time += 10* Integer.parseInt(line.substring(6, 7));
+			time += Integer.parseInt(line.substring(7, 8));
+		} else {
+			if(line.charAt(4) != ' ') {
+				time += 1000* Integer.parseInt(line.substring(4, 5));
+			}
+			time += 100* Integer.parseInt(line.substring(5, 6));
+			time += 10* Integer.parseInt(line.substring(7, 8));
+			time += Integer.parseInt(line.substring(8, 9));
 		}
-		time += 100* Integer.parseInt(line.substring(5, 6));
-		time += 10* Integer.parseInt(line.substring(7, 8));
-		time += Integer.parseInt(line.substring(8, 9));
 		
 		return time;
 	}
 
 	public void parse_course_slots(String line) {
+		if(line.equals("Course slots:") || line.equals("")) return;
 		Slot tmp = new Slot(time_parse(line));
 		tmp.coursemax = Integer.parseInt(line.substring(11, 12));
 		tmp.coursemin = Integer.parseInt(line.substring(14, 15));
@@ -99,6 +111,7 @@ public class Parser {
 	}
 
 	public void parse_lab_slots(String line) {
+		if(line.equals("Lab slots:") || line.equals("")) return;
 		int time = time_parse(line);
 		boolean found = false;
 
@@ -112,8 +125,8 @@ public class Parser {
 		}
 		if(!found) {
 			Slot tmp = new Slot(time);
-			tmp.coursemax = Integer.parseInt(line.substring(11, 12));
-			tmp.coursemin = Integer.parseInt(line.substring(14, 15));
+			tmp.labmax = Integer.parseInt(line.substring(11, 12));
+			tmp.labmin = Integer.parseInt(line.substring(14, 15));
 			slots.add(tmp);
 		}
 	}
@@ -174,15 +187,18 @@ public class Parser {
 	}
 	
 	public void parse_courses(String line) {
+		if(line.equals("Courses:") || line.equals("")) return;
 		courses.add(course_parse(line));
 	}
 	
 	//actually can put parse_lab and parse_course together
 	public void parse_labs(String line) {
+		if(line.equals("Labs:") || line.equals("")) return;
 		courses.add(course_parse(line));
 	}
 
 	public void parse_not_compatible(String line) {
+		if(line.equals("Not compatible:") || line.equals("")) return;
 		String[] pair = line.split(", ");
 		
 		CoursePair cp = new CoursePair(course_parse(pair[0]), course_parse(pair[1]));
@@ -190,6 +206,7 @@ public class Parser {
 	}
 
 	public void parse_unwanted(String line) {
+		if(line.equals("Unwanted:") || line.equals("")) return;
 		String cInfo = null;
 		int time = 0;
 		
@@ -206,6 +223,7 @@ public class Parser {
 	}
 
 	public void parse_preferences(String line) {
+		if(line.equals("Preferences:") || line.equals("")) return;
 		String[] info = null;
 		Course course = null;
 		Preference pf = null;
@@ -223,6 +241,7 @@ public class Parser {
 	}
 
 	public void parse_pair(String line) {
+		if(line.equals("Pair:") || line.equals("")) return;
 		String[] pairs = line.split(", ");
 		
 		CoursePair cp = new CoursePair(course_parse(pairs[0]), course_parse(pairs[1]));
@@ -230,6 +249,7 @@ public class Parser {
 	}
 
 	public void parse_partial_assignments(String line) {
+		if(line.equals("Partial assignments:") || line.equals("")) return;
 		Course course = null;
 		int time = 0;
 		
