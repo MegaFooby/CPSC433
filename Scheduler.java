@@ -113,7 +113,8 @@ public class Scheduler {
         //parse input file
         Fact solution = and_tree(foo);
         //print or save solution
-        System.out.println("DONE");
+        
+
     }
 
     public static Fact and_tree(Fact current) {

@@ -151,10 +151,16 @@ public class Parser {
         String[] data = line.split(" ");
         if(data.length == 4){
             Course tmp = new Course(data[0], Integer.parseInt(data[1]), Integer.parseInt(data[3]), false);
+            if(data[2].equals("LAB")){
+                tmp.tutorial_num = -1 * tmp.tutorial_num;
+            }
             this.courses.add(tmp);
         }
         else if(data.length == 6){
             Course tmp = new Course(data[0],Integer.parseInt(data[1]), Integer.parseInt(data[3]), Integer.parseInt(data[5]), false);
+            if(data[4].equals("LAB")){
+                tmp.tutorial_num = -1 * tmp.tutorial_num;
+            }
             this.courses.add(tmp);
         }
     }
@@ -173,6 +179,14 @@ public class Parser {
                 CoursePair cp = new CoursePair(first,second);
                 this.not_compatible.add(cp);
             }
+            else if(one[2].equals("LAB") && two.equals("LAB")){
+                first = new Course(one[0], Integer.parseInt(one[1]), Integer.parseInt(one[3]), false);
+                second = new Course(two[0], Integer.parseInt(two[1]), Integer.parseInt(two[3]), false);
+                first.tutorial_num = -1 * first.tutorial_num;
+                second.tutorial_num = -1 * second.tutorial_num;
+                CoursePair cp = new CoursePair(first,second);
+                this.not_compatible.add(cp);
+            }
             else{
                 first = new Course(one[0], Integer.parseInt(one[1]), Integer.parseInt(one[3]), true);
                 second = new Course(two[0], Integer.parseInt(two[1]), Integer.parseInt(two[3]), true);
@@ -184,6 +198,10 @@ public class Parser {
             //Unsure about whether the boolean here should be true or false
             first = new Course(one[0], Integer.parseInt(one[1]), Integer.parseInt(one[3]), Integer.parseInt(one[5]), false);
             second = new Course(two[0], Integer.parseInt(two[1]), Integer.parseInt(two[3]), Integer.parseInt(two[5]), false);
+            if(one[4].equals("LAB") && two[4].equals("LAB")){
+                first.tutorial_num = -1 * first.tutorial_num;
+                second.tutorial_num = -1 * second.tutorial_num;
+            }
             CoursePair cp = new CoursePair(first,second);
             this.not_compatible.add(cp);
         }
@@ -227,10 +245,18 @@ public class Parser {
                 tmp = new Course(course[0], Integer.parseInt(course[1]), Integer.parseInt(course[3]), false);
                 ct = new CourseTime(tmp, time);
             }
+            if(course[2].equals("LAB")){
+                tmp = new Course(course[0], Integer.parseInt(course[1]), Integer.parseInt(course[3]), false);
+                tmp.tutorial_num = -1 * tmp.tutorial_num;
+                ct = new CourseTime(tmp, time);
+            }
         }
         else if(course.length == 6){
             //Again unsure of what the boolean value should be
-            tmp = new Course(course[0], Integer.parseInt(course[1]), Integer.parseInt(course[3]),Integer.parseInt(course[5]), true);
+            tmp = new Course(course[0], Integer.parseInt(course[1]), Integer.parseInt(course[3]),Integer.parseInt(course[5]), false);
+            if(course[4].equals("LAB")){
+                tmp.tutorial_num = -1 * tmp.tutorial_num;
+            }
             ct = new CourseTime(tmp, time);
         }
         this.unwanted.add(ct);
@@ -270,9 +296,15 @@ public class Parser {
 
         if(course.length == 4){
             tmp = new Course(course[0], Integer.parseInt(course[1]),Integer.parseInt(course[3]),true);
+            if(course[2].equals("LAB")){
+                tmp.tutorial_num = -1 * tmp.tutorial_num;
+            }
         }
         else if(course.length == 6){
             tmp = new Course(course[0], Integer.parseInt(course[1]),Integer.parseInt(course[3]), Integer.parseInt(course[5]),true);
+            if(course[4].equals("LAB")){
+                tmp.tutorial_num = -1 * tmp.tutorial_num;
+            }
         }
         pref = new Preference(tmp, time, value);
         this.preferences.add(pref);
@@ -292,6 +324,14 @@ public class Parser {
                 CoursePair cp = new CoursePair(first,second);
                 this.pair.add(cp);
             }
+            else if(one[2].equals("LAB") && two[2].equals("LAB")){
+                first = new Course(one[0], Integer.parseInt(one[1]), Integer.parseInt(one[3]), false);
+                second = new Course(two[0], Integer.parseInt(two[1]), Integer.parseInt(two[3]), false);
+                first.tutorial_num = -1 * first.tutorial_num;
+                second.tutorial_num = -1 * second.tutorial_num;
+                CoursePair cp = new CoursePair(first,second);
+                this.pair.add(cp);
+            }
             else{
                 first = new Course(one[0], Integer.parseInt(one[1]), Integer.parseInt(one[3]), true);
                 second = new Course(two[0], Integer.parseInt(two[1]), Integer.parseInt(two[3]), true);
@@ -303,6 +343,10 @@ public class Parser {
             //Unsure about whether the boolean here should be true or false
             first = new Course(one[0], Integer.parseInt(one[1]), Integer.parseInt(one[3], Integer.parseInt(one[5])), true);
             second = new Course(two[0], Integer.parseInt(two[1]), Integer.parseInt(two[3], Integer.parseInt(two[5])), true);
+            if(one[4].equals("LAB") && two[4].equals("LAB")){
+                first.tutorial_num = -1 * first.tutorial_num;
+                second.tutorial_num = -1 * second.tutorial_num;
+            }
             CoursePair cp = new CoursePair(first,second);
             this.pair.add(cp);
         }
@@ -386,6 +430,7 @@ public class Parser {
             courseNum = Integer.parseInt(info[1]);
             LectureNum = Integer.parseInt(info[3]);
             if (info[4] == "TUT") isLecture = false;
+            if (info[4].equals("LAB")) isLecture = false;
             LabNum = Integer.parseInt(info[5]);
 
             Course course = new Course(department, courseNum, LectureNum, LabNum,isLecture);
