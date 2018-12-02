@@ -186,7 +186,7 @@ public class Parser {
 		String[] pair = line.split(", ");
 		
 		CoursePair cp = new CoursePair(course_parse(pair[0]), course_parse(pair[1]));
-		not_compatible.add(cp)
+		not_compatible.add(cp);
 	}
 
 	public void parse_unwanted(String line) {
@@ -226,7 +226,7 @@ public class Parser {
 		String[] pair = line.split(", ");
 		
 		CoursePair cp = new CoursePair(course_parse(pair[0]), course_parse(pair[1]));
-		pair.add(cp)
+		pair.add(cp);
 	}
 
 	public void parse_partial_assignments(String line) {
