@@ -10,15 +10,15 @@ public class Parser {
 	public Vector<CourseTime> unwanted = new Vector();//contains unwanted <Course, int time>
 	public Vector<Preference> preferences = new Vector();
 	public Vector<CoursePair> pair = new Vector();
-	public Vector<CourseTime> partial = new Vector();
-	
+	public Vector<CourseTime> partial = new Vector();	
+
 	public static void main(String args[]) {
 		Parser parse = new Parser("deptinst1.txt");
 	}
-	
+
 	public Parser(String filename) {
 		String line = null;
-		
+
 		try {
 			FileReader filereader = new FileReader(filename);
 			BufferedReader read = new BufferedReader(filereader);
@@ -33,6 +33,7 @@ public class Parser {
 						System.out.println();
 					}
 				}*/
+
 				switch(line) {
 					case "Course slots:": counter = 1; break;
 					case "Lab slots:": counter = 2; break;
@@ -44,9 +45,9 @@ public class Parser {
 					case "Pair:": counter = 8; break;
 					case "Partial assignments:": counter = 9; break;
 					default:
-					if(line.length() < linelength[counter] || line.equals("\n")) {
-						break;
-					}
+						if(line.length() < linelength[counter] || line.equals("\n")) {
+							break;
+						}
 					switch(counter) {
 						case 1: parse_course_slots(line); break;
 						case 2: parse_lab_slots(line); break;
@@ -60,7 +61,6 @@ public class Parser {
 					}
 				}
 			}
-			
 			read.close();
 			filereader.close();
 		}
@@ -70,7 +70,7 @@ public class Parser {
 		}
 	}
 	
-	public void parse_course_slots(String line) {
+	public int time_parse(String line) {
 		int time = 0;
 		if(line.charAt(0) == 'M' && line.charAt(1) == 'O') {
 			time += 10000;
@@ -88,29 +88,20 @@ public class Parser {
 		time += 10* Integer.parseInt(line.substring(7, 8));
 		time += Integer.parseInt(line.substring(8, 9));
 		
-		Slot tmp = new Slot(time);
+		return time;
+	}
+
+	public void parse_course_slots(String line) {
+		Slot tmp = new Slot(time_parse(line));
 		tmp.coursemax = Integer.parseInt(line.substring(11, 12));
 		tmp.coursemin = Integer.parseInt(line.substring(14, 15));
 		slots.add(tmp);
 	}
+
 	public void parse_lab_slots(String line) {
-		int time = 0;
-		if(line.charAt(0) == 'M' && line.charAt(1) == 'O') {
-			time += 10000;
-		} else if(line.charAt(0) == 'T' && line.charAt(1) == 'U') {
-			time += 20000;
-		} else if(line.charAt(0) == 'F' && line.charAt(1) == 'R') {
-			time += 50000;
-		} else {
-			System.out.println("Day " + line.charAt(0) + line.charAt(1) + " not recognized");
-		}
-		if(line.charAt(4) != ' ') {
-			time += 1000* Integer.parseInt(line.substring(4, 5));
-		}
-		time += 100* Integer.parseInt(line.substring(5, 6));
-		time += 10* Integer.parseInt(line.substring(7, 8));
-		time += Integer.parseInt(line.substring(8, 9));
+		int time = time_parse(line);
 		boolean found = false;
+
 		for(int i = 0; i < slots.size(); i++) {
 			if(slots.get(i).time == time) {
 				found = true;
@@ -126,26 +117,129 @@ public class Parser {
 			slots.add(tmp);
 		}
 	}
+
+	public Course course_parse(String CourseInfo) {
+		String department = null;
+		boolean isLecture = false;
+		int courseNum = 0;
+		int LectureNum = 0;
+		int LabNum = 0;
+		Course courseP = null;
+		String[] info = CourseInfo.split(" ");
+		if (info.length == 4) {
+			department = info[0];
+			courseNum = Integer.parseInt(info[1]);
+			if (info[2] == "LEC") {
+				isLecture = true;
+				LectureNum = Integer.parseInt(info[3]);
+				Course course = new Course(department, courseNum, LectureNum, isLecture);
+				/*
+				course.name = department;
+				course.number = courseNum;
+				course.lecture_num = LectureNum;
+				course.is_lecture = isLecture;
+				*/
+				courseP = course;
+			}
+			else {
+				LabNum = Integer.parseInt(info[3]);
+				Course course = new Course(department, courseNum, isLecture, LabNum);
+				/*
+				course.name = department;
+				course.number = courseNum;
+				course.tut_num = LabNum;
+				course.is_lecture = isLecture;
+				*/
+				courseP = course;
+			}
+		}
+		if (info.length == 6) {
+			department = info[0];
+			courseNum = Integer.parseInt(info[1]);
+			LectureNum = Integer.parseInt(info[3]);
+			if (info[4] == "TUT") isLecture = false;
+			LabNum = Integer.parseInt(info[5]);
+				
+			Course course = new Course(department, courseNum, LectureNum, isLecture, LabNum);
+			/*
+			course.name = department;
+			course.number = courseNum;
+			course.lecture_num = LectureNum;
+			course.is_lecture = isLecture;
+			course.tut_num = LabNum;
+			*/
+			courseP = course;
+		}
+		return courseP;
+	}
+	
 	public void parse_courses(String line) {
-		
+		courses.add(course_parse(line));
 	}
+	
+	//actually can put parse_lab and parse_course together
 	public void parse_labs(String line) {
-		
+		courses.add(course_parse(line));
 	}
+
 	public void parse_not_compatible(String line) {
+		String[] pair = line.split(", ");
 		
+		CoursePair cp = new CoursePair(course_parse(pair[0]), course_parse(pair[1]));
+		not_compatible.add(cp);
 	}
+
 	public void parse_unwanted(String line) {
+		String cInfo = null;
+		int time = 0;
 		
+		String[] info = line.split(", ");
+		
+		cInfo = info[0];
+		Course course = course_parse(cInfo);
+		
+		String timeline = info[1] + ", " + info[2];
+		time = time_parse(timeline);
+		
+		CourseTime ct = new CourseTime(course, time);
+		unwanted.add(ct);
 	}
+
 	public void parse_preferences(String line) {
+		String[] info = null;
+		Course course = null;
+		Preference pf = null;
+		int time = 0;
+		int val = 0;
 		
+		info = line.split(", ");
+		String timeline = info[0] + ", " + info[1];
+		time = time_parse(timeline);
+		course = course_parse(info[2]);
+		val = Integer.parseInt(info[3]);
+		
+		pf = new Preference(course, time, val);
+		preferences.add(pf);
 	}
+
 	public void parse_pair(String line) {
+		String[] pairs = line.split(", ");
 		
+		CoursePair cp = new CoursePair(course_parse(pairs[0]), course_parse(pairs[1]));
+		pair.add(cp);
 	}
+
 	public void parse_partial_assignments(String line) {
+		Course course = null;
+		int time = 0;
 		
+		String[] info = line.split(", "); 
+		course = course_parse(info[0]);
+		String timeline = info[1] + ", " + info[2];
+		time = time_parse(timeline);
+		
+		CourseTime ct = new CourseTime(course, time);
+		partial.add(ct);
 	}
 }
 
@@ -156,11 +250,14 @@ class CourseTime {
 		course = null;
 		time = 0;
 	}
+
 	public CourseTime(Course c, int t) {
 		course = c;
 		time = t;
 	}
 }
+
+
 
 class CoursePair {
 	public Course first;
@@ -169,11 +266,14 @@ class CoursePair {
 		first = null;
 		second = null;
 	}
+
 	public CoursePair(Course one, Course two) {
 		first = one;
 		second = two;
 	}
 }
+
+
 
 class Preference {
 	public Course course;
@@ -184,9 +284,94 @@ class Preference {
 		time = 0;
 		value = 0;
 	}
+
 	public Preference(Course c, int t, int val) {
 		course = c;
 		time = t;
 		value = val;
+	}
+}
+
+
+class Slot {
+	public int time;
+	public Vector<Course> course;
+	public int coursemin;
+	public int coursemax;
+	public int labmin;
+	public int labmax;
+	
+	public Slot(int time) {
+		this.time = time;
+		course = new Vector();
+		coursemax = 0;
+		coursemin = 0;
+		labmax = 0;
+		labmin = 0;
+	}
+
+	public Slot(Vector<Course> courses, int time) {
+		this.time = time;
+		course = courses;
+		coursemax = 0;
+		coursemin = 0;
+		labmax = 0;
+		labmin = 0;
+	}
+
+	public Slot(Vector<Course> courses, int time, int cmin, int cmax, int lmin, int lmax) {
+		this.time = time;
+		course = courses;
+		coursemax = cmax;
+		coursemin = cmin;
+		labmax = lmax;
+		labmin = lmin;
+	}
+
+	public boolean addCourse(Course toAdd) {
+		course.add(toAdd);
+		return true;
+	}
+
+	public Slot copy() {
+		return new Slot((Vector<Course>)this.course.clone(), time, coursemin, coursemax, labmin, labmax);
+	}
+}
+
+class Course {
+	public String name;
+	public int number;
+	public int lecture_num;
+	public boolean is_lecture;//true if lecture, false if tutorial
+	public int tut_num;
+	
+	
+	
+	public Course(String name, int number, int lecture_num, boolean is_lecture) {
+		this.name = name;
+		this.number = number;
+		this.lecture_num = lecture_num;
+		this.is_lecture = is_lecture;
+	}
+	
+	public Course(String name, int number, int lecture_num, boolean is_lecture, int tut_num) {
+		this.name = name;
+		this.number = number;
+		this.lecture_num = lecture_num;
+		this.is_lecture = is_lecture;
+		this.tut_num = tut_num;
+	}
+	
+	public Course(String name, int number, boolean is_lecture, int tut_num) {
+		this.name = name;
+		this.number = number;
+		this.lecture_num = lecture_num;
+		this.is_lecture = is_lecture;
+		this.tut_num = tut_num;
+	}
+
+	public boolean equals(Course compare) {
+		return (this.name.equals(compare.name) && this.number == compare.number &&
+		this.lecture_num == compare.lecture_num && this.is_lecture == compare.is_lecture);
 	}
 }
