@@ -23,16 +23,22 @@ public class Parser {
             FileReader filereader = new FileReader(filename);
             BufferedReader read = new BufferedReader(filereader);
             line = read.readLine();
-            name = read.readLine();
+            this.name = read.readLine();
             int counter = 0;
             while(line != null) {
-                line = read.readLine();
+                if((line = read.readLine()) == null){
+                    break;
+                }
+                //line = read.readLine();
 				/*for(int i = 0; i < line.getBytes().length; i++) {
 					System.out.print(line.getBytes()[i] + " ");
 					if(line.getBytes()[i] == 10) {
 						System.out.println();
 					}
 				}*/
+				if(line == null){
+				    line = "";
+                }
                 switch(line) {
                     case "Course slots:": counter = 1; break;
                     case "Lab slots:": counter = 2; break;
@@ -44,20 +50,20 @@ public class Parser {
                     case "Pair:": counter = 8; break;
                     case "Partial assignments:": counter = 9; break;
                     default:
-                        if(line.length() < linelength[counter] || line.equals("\n")) {
+                        if(line.length() < linelength[counter] || line.equals("\n") || line.equals(null)) {
                             break;
                         }
-                        switch(counter) {
-                            case 1: parse_course_slots(line); break;
-                            case 2: parse_lab_slots(line); break;
-                            case 3: parse_courses(line); break;
-                            case 4: parse_labs(line); break;
-                            case 5: parse_not_compatible(line); break;
-                            case 6: parse_unwanted(line); break;
-                            case 7: parse_preferences(line); break;
-                            case 8: parse_pair(line); break;
-                            case 9: parse_partial_assignments(line); break;
-                        }
+                }
+                switch(counter) {
+                    case 1: parse_course_slots(line); break;
+                    case 2: parse_lab_slots(line); break;
+                    case 3: parse_courses(line); break;
+                    case 4: parse_labs(line); break;
+                    case 5: parse_not_compatible(line); break;
+                    case 6: parse_unwanted(line); break;
+                    case 7: parse_preferences(line); break;
+                    case 8: parse_pair(line); break;
+                    case 9: parse_partial_assignments(line); break;
                 }
             }
 
@@ -67,10 +73,13 @@ public class Parser {
         catch(Exception e) {
             System.out.println("Failed to open file: " + filename);
             System.out.println(e);
+            System.out.println(line);
         }
     }
 
     public void parse_course_slots(String line) {
+        if(line.equals("Course slots:")) return;
+        if(line.equals("")) return;
         int time = 0;
         if(line.charAt(0) == 'M' && line.charAt(1) == 'O') {
             time += 10000;
@@ -91,9 +100,11 @@ public class Parser {
         Slot tmp = new Slot(time);
         tmp.coursemax = Integer.parseInt(line.substring(11, 12));
         tmp.coursemin = Integer.parseInt(line.substring(14, 15));
-        slots.add(tmp);
+        this.slots.add(tmp);
     }
     public void parse_lab_slots(String line) {
+        if(line.equals("Lab slots:")) return;
+        if(line.equals("")) return;
         int time = 0;
         if(line.charAt(0) == 'M' && line.charAt(1) == 'O') {
             time += 10000;
@@ -123,30 +134,36 @@ public class Parser {
             Slot tmp = new Slot(time);
             tmp.coursemax = Integer.parseInt(line.substring(11, 12));
             tmp.coursemin = Integer.parseInt(line.substring(14, 15));
-            slots.add(tmp);
+            this.slots.add(tmp);
         }
     }
     public void parse_courses(String line) {
+        if(line.equals("Courses:")) return;
+        if(line.equals("")) return;
         String[] data = line.split(" ");
         Course tmp = new Course(data[0], Integer.parseInt(data[1]), Integer.parseInt(data[3]), true);
-        courses.add(tmp);
+        this.courses.add(tmp);
 
     }
     public void parse_labs(String line) {
+        if(line.equals("Labs:")) return;
+        if(line.equals("")) return;
         String[] data = line.split(" ");
         if(data.length == 4){
             Course tmp = new Course(data[0], Integer.parseInt(data[1]), Integer.parseInt(data[3]), false);
-            courses.add(tmp);
+            this.courses.add(tmp);
         }
         else if(data.length == 6){
             Course tmp = new Course(data[0],Integer.parseInt(data[1]), Integer.parseInt(data[3]), Integer.parseInt(data[5]), false);
-            courses.add(tmp);
+            this.courses.add(tmp);
         }
     }
     public void parse_not_compatible(String line) {
+        if(line.equals("Not compatible:")) return;
+        if(line.equals("")) return;
         String[] data = line.split(",");
-        String[] one = data[0].split(" ");
-        String[] two = data[1].split(" ");
+        String[] one = data[0].trim().split(" ");
+        String[] two = data[1].trim().split(" ");
         Course first;
         Course second;
         if(one.length == 4 && two.length == 4){
@@ -154,30 +171,32 @@ public class Parser {
                 first = new Course(one[0], Integer.parseInt(one[1]), Integer.parseInt(one[3]), false);
                 second = new Course(two[0], Integer.parseInt(two[1]), Integer.parseInt(two[3]), false);
                 CoursePair cp = new CoursePair(first,second);
-                not_compatible.add(cp);
+                this.not_compatible.add(cp);
             }
             else{
                 first = new Course(one[0], Integer.parseInt(one[1]), Integer.parseInt(one[3]), true);
                 second = new Course(two[0], Integer.parseInt(two[1]), Integer.parseInt(two[3]), true);
                 CoursePair cp = new CoursePair(first,second);
-                not_compatible.add(cp);
+                this.not_compatible.add(cp);
             }
         }
         else if(one.length == 6 && two.length == 6){
             //Unsure about whether the boolean here should be true or false
-            first = new Course(one[0], Integer.parseInt(one[1]), Integer.parseInt(one[3], Integer.parseInt(one[5])), true);
-            second = new Course(two[0], Integer.parseInt(two[1]), Integer.parseInt(two[3], Integer.parseInt(two[5])), true);
+            first = new Course(one[0], Integer.parseInt(one[1]), Integer.parseInt(one[3]), Integer.parseInt(one[5]), false);
+            second = new Course(two[0], Integer.parseInt(two[1]), Integer.parseInt(two[3]), Integer.parseInt(two[5]), false);
             CoursePair cp = new CoursePair(first,second);
-            not_compatible.add(cp);
+            this.not_compatible.add(cp);
         }
     }
     public void parse_unwanted(String line) {
+        if(line.equals("Unwanted:")) return;
+        if(line.equals("")) return;
         String[] data = line.split(",");
-        String[] course = data[0].split(" ");
+        String[] course = data[0].trim().split(" ");
         CourseTime ct = null;
         Course tmp;
         int time = 0;
-        String dt = data[1];
+        String dt = data[1].trim();
         if(dt.equals("MO")) {
             time += 10000;
         } else if(dt.equals("TU")) {
@@ -187,13 +206,18 @@ public class Parser {
         } else {
             System.out.println("Day " + line.charAt(0) + line.charAt(1) + " not recognized");
         }
-        String tm = data[2];
-        if(tm.length() > 3) {
+        String tm = data[2].trim();
+        if(tm.length() > 4) {
             time += 1000* Integer.parseInt(tm.substring(0,1));
+            time += 100* Integer.parseInt(tm.substring(1, 2));
+            time += 10* Integer.parseInt(tm.substring(3, 4));
+            time += Integer.parseInt(tm.substring(4, 5));
         }
-        time += 100* Integer.parseInt(tm.substring(1, 2));
-        time += 10* Integer.parseInt(tm.substring(2, 3));
-        time += Integer.parseInt(tm.substring(3, 4));
+        else {
+            time += 100 * Integer.parseInt(tm.substring(0, 1));
+            time += 10 * Integer.parseInt(tm.substring(2, 3));
+            time += Integer.parseInt(tm.substring(3, 4));
+        }
         if(course.length == 4){
             if(course[2].equals("LEC")){
                 tmp = new Course(course[0], Integer.parseInt(course[1]), Integer.parseInt(course[3]), true);
@@ -209,17 +233,19 @@ public class Parser {
             tmp = new Course(course[0], Integer.parseInt(course[1]), Integer.parseInt(course[3]),Integer.parseInt(course[5]), true);
             ct = new CourseTime(tmp, time);
         }
-        unwanted.add(ct);
+        this.unwanted.add(ct);
     }
     public void parse_preferences(String line) {
+        if(line.equals("Preferences:")) return;
+        if(line.equals("")) return;
         Preference pref = null;
         Course tmp = null;
         int time = 0;
         int value = 0;
         String[] data = line.split(",");
-        String[] course = data[2].split(" ");
-        String dt = data[0];
-        String tm = data[1];
+        String[] course = data[2].trim().split(" ");
+        String dt = data[0].trim();
+        String tm = data[1].trim();
         if(dt.equals("MO")) {
             time += 10000;
         } else if(dt.equals("TU")) {
@@ -229,13 +255,18 @@ public class Parser {
         } else {
             System.out.println("Day " + line.charAt(0) + line.charAt(1) + " not recognized");
         }
-        if(tm.length() > 3) {
+        if(tm.length() > 4) {
             time += 1000* Integer.parseInt(tm.substring(0,1));
+            time += 100* Integer.parseInt(tm.substring(1, 2));
+            time += 10* Integer.parseInt(tm.substring(3, 4));
+            time += Integer.parseInt(tm.substring(4, 5));
         }
-        time += 100* Integer.parseInt(tm.substring(1, 2));
-        time += 10* Integer.parseInt(tm.substring(2, 3));
-        time += Integer.parseInt(tm.substring(3, 4));
-        value = Integer.parseInt(data[3]);
+        else {
+            time += 100 * Integer.parseInt(tm.substring(0, 1));
+            time += 10 * Integer.parseInt(tm.substring(2, 3));
+            time += Integer.parseInt(tm.substring(3, 4));
+        }
+        value = Integer.parseInt(data[3].trim());
 
         if(course.length == 4){
             tmp = new Course(course[0], Integer.parseInt(course[1]),Integer.parseInt(course[3]),true);
@@ -244,12 +275,14 @@ public class Parser {
             tmp = new Course(course[0], Integer.parseInt(course[1]),Integer.parseInt(course[3]), Integer.parseInt(course[5]),true);
         }
         pref = new Preference(tmp, time, value);
-
+        this.preferences.add(pref);
     }
     public void parse_pair(String line) {
+        if(line.equals("Pair:")) return;
+        if(line.equals("")) return;
         String[] data = line.split(",");
-        String[] one = data[0].split(" ");
-        String[] two = data[1].split(" ");
+        String[] one = data[0].trim().split(" ");
+        String[] two = data[1].trim().split(" ");
         Course first;
         Course second;
         if(one.length == 4 && two.length == 4){
@@ -257,13 +290,13 @@ public class Parser {
                 first = new Course(one[0], Integer.parseInt(one[1]), Integer.parseInt(one[3]), false);
                 second = new Course(two[0], Integer.parseInt(two[1]), Integer.parseInt(two[3]), false);
                 CoursePair cp = new CoursePair(first,second);
-                pair.add(cp);
+                this.pair.add(cp);
             }
             else{
                 first = new Course(one[0], Integer.parseInt(one[1]), Integer.parseInt(one[3]), true);
                 second = new Course(two[0], Integer.parseInt(two[1]), Integer.parseInt(two[3]), true);
                 CoursePair cp = new CoursePair(first,second);
-                pair.add(cp);
+                this.pair.add(cp);
             }
         }
         else if(one.length == 6 && two.length == 6){
@@ -271,11 +304,101 @@ public class Parser {
             first = new Course(one[0], Integer.parseInt(one[1]), Integer.parseInt(one[3], Integer.parseInt(one[5])), true);
             second = new Course(two[0], Integer.parseInt(two[1]), Integer.parseInt(two[3], Integer.parseInt(two[5])), true);
             CoursePair cp = new CoursePair(first,second);
-            pair.add(cp);
+            this.pair.add(cp);
         }
     }
     public void parse_partial_assignments(String line) {
+        if(line.equals("Partial assignments:") || line.equals("")) return;
+        Course course = null;
+        int time = 0;
 
+        String[] info = line.split(", ");
+        course = course_parse(info[0]);
+        String timeline = info[1] + ", " + info[2];
+        time = time_parse(timeline);
+
+        CourseTime ct = new CourseTime(course, time);
+        this.partial.add(ct);
+    }
+    public int time_parse(String line) {
+        int time = 0;
+        if (line.charAt(0) == 'M' && line.charAt(1) == 'O') {
+            time += 10000;
+        } else if (line.charAt(0) == 'T' && line.charAt(1) == 'U') {
+            time += 20000;
+        } else if (line.charAt(0) == 'F' && line.charAt(1) == 'R') {
+            time += 50000;
+        } else {
+            System.out.println("Day " + line.charAt(0) + line.charAt(1) + " not recognized");
+        }
+        if (line.charAt(5) == ':') {
+            time += 100 * Integer.parseInt(line.substring(4, 5));
+            time += 10 * Integer.parseInt(line.substring(6, 7));
+            time += Integer.parseInt(line.substring(7, 8));
+        } else {
+            if (line.charAt(4) != ' ') {
+                time += 1000 * Integer.parseInt(line.substring(4, 5));
+            }
+            time += 100 * Integer.parseInt(line.substring(5, 6));
+            time += 10 * Integer.parseInt(line.substring(7, 8));
+            time += Integer.parseInt(line.substring(8, 9));
+        }
+
+        return time;
+    }
+    public Course course_parse(String CourseInfo) {
+        String department = null;
+        boolean isLecture = false;
+        int courseNum = 0;
+        int LectureNum = 0;
+        int LabNum = 0;
+        Course courseP = null;
+        String[] info = CourseInfo.split(" ");
+        if (info.length == 4) {
+            department = info[0];
+            courseNum = Integer.parseInt(info[1]);
+            if (info[2] == "LEC") {
+                isLecture = true;
+                LectureNum = Integer.parseInt(info[3]);
+                Course course = new Course(department, courseNum, LectureNum, isLecture);
+				/*
+				course.name = department;
+				course.number = courseNum;
+				course.lecture_num = LectureNum;
+				course.is_lecture = isLecture;
+				*/
+                courseP = course;
+            }
+            else {
+                LabNum = Integer.parseInt(info[3]);
+                Course course = new Course(department, courseNum, LabNum, isLecture);
+				/*
+				course.name = department;
+				course.number = courseNum;
+				course.tut_num = LabNum;
+				course.is_lecture = isLecture;
+				*/
+                courseP = course;
+            }
+        }
+        if (info.length == 6) {
+            department = info[0];
+            courseNum = Integer.parseInt(info[1]);
+            LectureNum = Integer.parseInt(info[3]);
+            if (info[4] == "TUT") isLecture = false;
+            LabNum = Integer.parseInt(info[5]);
+
+            Course course = new Course(department, courseNum, LectureNum, LabNum,isLecture);
+			/*
+			course.name = department;
+			course.number = courseNum;
+			course.lecture_num = LectureNum;
+			course.is_lecture = isLecture;
+			course.tut_num = LabNum;
+			*/
+            courseP = course;
+        }
+        return courseP;
     }
 }
 

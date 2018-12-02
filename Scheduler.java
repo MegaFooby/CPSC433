@@ -101,15 +101,19 @@ public class Scheduler {
         Parser parse = new Parser(args[0]);
 
         Fact foo = new Fact(parse.courses);
-        foo.slots = (Slot[])parse.slots.toArray();
+        Slot[] foos = new Slot[parse.slots.size()];
+        for(int i = 0; i < foos.length; i++){
+            foos[i] = parse.slots.get(i);
+        }
+        foo.slots = foos;
 
         for(int i = 0; i < parse.partial.size(); i++) {
             foo.assign(parse.partial.get(i).time, parse.partial.get(i).course);
         }
-
         //parse input file
         Fact solution = and_tree(foo);
         //print or save solution
+        System.out.println("DONE");
     }
 
     public static Fact and_tree(Fact current) {
@@ -143,7 +147,7 @@ public class Scheduler {
     //evaluate all hard constraint violations to Integer.MIN_VALUE
     //Also just evaluate with respect to the current class in the current slot
     public static void evaluate(Fact current, int slot) {
-        current.assign(slot, current.unassigned.size());
+        current.assign(slot, current.unassigned.size()-1);
         //if there are too many courses in the slot
         int cnum = 0, lnum = 0;
         for(int i = 0; i < current.slots[slot].course.size(); i++) {
