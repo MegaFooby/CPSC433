@@ -1,666 +1,430 @@
-import java.io.*;
-import java.util.*;
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-public class Parser {
-    public static final int[] linelength = {6, 16, 16, 16, 16, 33, 26, 31, 33, 1};
-    public String name;
-    public Vector<Slot> slots = new Vector();//contains slots for both courses and labs
-    public Vector<Course> courses = new Vector();//countains labs and courses
-    public Vector<CoursePair> not_compatible = new Vector();//contains not compatible pairs <Course, Course>
-    public Vector<CourseTime> unwanted = new Vector();//contains unwanted <Course, int time>
-    public Vector<Preference> preferences = new Vector();
-    public Vector<CoursePair> pair = new Vector();
-    public Vector<CourseTime> partial = new Vector();
+package org.apache.commons.cli;
 
-    public static void main(String args[]) {
-        Parser parse = new Parser("deptinst1.txt");
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Properties;
+
+/**
+ * <code>Parser</code> creates {@link CommandLine}s.
+ *
+ * @version $Id: Parser.java 1744812 2016-05-20 23:36:20Z ggregory $
+ * @deprecated since 1.3, the two-pass parsing with the flatten method is not enough flexible to handle complex cases
+ */
+@Deprecated
+public abstract class Parser implements CommandLineParser
+{
+    /** commandline instance */
+    protected CommandLine cmd;
+
+    /** current Options */
+    private Options options;
+
+    /** list of required options strings */
+    private List requiredOptions;
+
+    protected void setOptions(Options options)
+    {
+        this.options = options;
+        this.requiredOptions = new ArrayList(options.getRequiredOptions());
     }
 
-    public Parser(String filename) {
-        String line = null;
+    protected Options getOptions()
+    {
+        return options;
+    }
 
-        try {
-            FileReader filereader = new FileReader(filename);
-            BufferedReader read = new BufferedReader(filereader);
-            line = read.readLine();
-            this.name = read.readLine();
-            int counter = 0;
-            while(line != null) {
-                if((line = read.readLine()) == null){
-                    break;
+    protected List getRequiredOptions()
+    {
+        return requiredOptions;
+    }
+
+    /**
+     * Subclasses must implement this method to reduce
+     * the <code>arguments</code> that have been passed to the parse method.
+     *
+     * @param opts The Options to parse the arguments by.
+     * @param arguments The arguments that have to be flattened.
+     * @param stopAtNonOption specifies whether to stop
+     * flattening when a non option has been encountered
+     * @return a String array of the flattened arguments
+     * @throws ParseException if there are any problems encountered
+     *                        while parsing the command line tokens.
+     */
+    protected abstract String[] flatten(Options opts, String[] arguments, boolean stopAtNonOption)
+            throws ParseException;
+
+    /**
+     * Parses the specified <code>arguments</code> based
+     * on the specified {@link Options}.
+     *
+     * @param options the <code>Options</code>
+     * @param arguments the <code>arguments</code>
+     * @return the <code>CommandLine</code>
+     * @throws ParseException if there are any problems encountered
+     *                        while parsing the command line tokens.
+     */
+    public CommandLine parse(Options options, String[] arguments) throws ParseException
+    {
+        return parse(options, arguments, null, false);
+    }
+
+    /**
+     * Parse the arguments according to the specified options and properties.
+     *
+     * @param options    the specified Options
+     * @param arguments  the command line arguments
+     * @param properties command line option name-value pairs
+     * @return the list of atomic option and value tokens
+     * @throws ParseException if there are any problems encountered
+     *                        while parsing the command line tokens.
+     *
+     * @since 1.1
+     */
+    public CommandLine parse(Options options, String[] arguments, Properties properties) throws ParseException
+    {
+        return parse(options, arguments, properties, false);
+    }
+
+    /**
+     * Parses the specified <code>arguments</code>
+     * based on the specified {@link Options}.
+     *
+     * @param options         the <code>Options</code>
+     * @param arguments       the <code>arguments</code>
+     * @param stopAtNonOption if <tt>true</tt> an unrecognized argument stops
+     *     the parsing and the remaining arguments are added to the 
+     *     {@link CommandLine}s args list. If <tt>false</tt> an unrecognized
+     *     argument triggers a ParseException.
+     * @return the <code>CommandLine</code>
+     * @throws ParseException if an error occurs when parsing the arguments.
+     */
+    public CommandLine parse(Options options, String[] arguments, boolean stopAtNonOption) throws ParseException
+    {
+        return parse(options, arguments, null, stopAtNonOption);
+    }
+
+    /**
+     * Parse the arguments according to the specified options and
+     * properties.
+     *
+     * @param options the specified Options
+     * @param arguments the command line arguments
+     * @param properties command line option name-value pairs
+     * @param stopAtNonOption if <tt>true</tt> an unrecognized argument stops
+     *     the parsing and the remaining arguments are added to the 
+     *     {@link CommandLine}s args list. If <tt>false</tt> an unrecognized
+     *     argument triggers a ParseException.
+     *
+     * @return the list of atomic option and value tokens
+     *
+     * @throws ParseException if there are any problems encountered
+     * while parsing the command line tokens.
+     *
+     * @since 1.1
+     */
+    public CommandLine parse(Options options, String[] arguments, Properties properties, boolean stopAtNonOption)
+            throws ParseException
+    {
+        // clear out the data in options in case it's been used before (CLI-71)
+        for (Option opt : options.helpOptions())
+        {
+            opt.clearValues();
+        }
+        
+        // clear the data from the groups
+        for (OptionGroup group : options.getOptionGroups())
+        {
+            group.setSelected(null);
+        }        
+
+        // initialise members
+        setOptions(options);
+
+        cmd = new CommandLine();
+
+        boolean eatTheRest = false;
+
+        if (arguments == null)
+        {
+            arguments = new String[0];
+        }
+
+        List<String> tokenList = Arrays.asList(flatten(getOptions(), arguments, stopAtNonOption));
+
+        ListIterator<String> iterator = tokenList.listIterator();
+
+        // process each flattened token
+        while (iterator.hasNext())
+        {
+            String t = iterator.next();
+
+            // the value is the double-dash
+            if ("--".equals(t))
+            {
+                eatTheRest = true;
+            }
+
+            // the value is a single dash
+            else if ("-".equals(t))
+            {
+                if (stopAtNonOption)
+                {
+                    eatTheRest = true;
                 }
-                //line = read.readLine();
-				/*for(int i = 0; i < line.getBytes().length; i++) {
-					System.out.print(line.getBytes()[i] + " ");
-					if(line.getBytes()[i] == 10) {
-						System.out.println();
-					}
-				}*/
-				if(line == null){
-				    line = "";
-                }
-                switch(line) {
-                    case "Course slots:": counter = 1; break;
-                    case "Lab slots:": counter = 2; break;
-                    case "Courses:": counter = 3; break;
-                    case "Labs:": counter = 4; break;
-                    case "Not compatible:": counter = 5; break;
-                    case "Unwanted:": counter = 6; break;
-                    case "Preferences:": counter = 7; break;
-                    case "Pair:": counter = 8; break;
-                    case "Partial assignments:": counter = 9; break;
-                    default:
-                        if(line.length() < linelength[counter] || line.equals("\n") || line.equals(null)) {
-                            break;
-                        }
-                }
-                switch(counter) {
-                    case 1: parse_course_slots(line); break;
-                    case 2: parse_lab_slots(line); break;
-                    case 3: parse_courses(line); break;
-                    case 4: parse_labs(line); break;
-                    case 5: parse_not_compatible(line); break;
-                    case 6: parse_unwanted(line); break;
-                    case 7: parse_preferences(line); break;
-                    case 8: parse_pair(line); break;
-                    case 9: parse_partial_assignments(line); break;
+                else
+                {
+                    cmd.addArg(t);
                 }
             }
 
-            read.close();
-            filereader.close();
+            // the value is an option
+            else if (t.startsWith("-"))
+            {
+                if (stopAtNonOption && !getOptions().hasOption(t))
+                {
+                    eatTheRest = true;
+                    cmd.addArg(t);
+                }
+                else
+                {
+                    processOption(t, iterator);
+                }
+            }
+
+            // the value is an argument
+            else
+            {
+                cmd.addArg(t);
+
+                if (stopAtNonOption)
+                {
+                    eatTheRest = true;
+                }
+            }
+
+            // eat the remaining tokens
+            if (eatTheRest)
+            {
+                while (iterator.hasNext())
+                {
+                    String str = iterator.next();
+
+                    // ensure only one double-dash is added
+                    if (!"--".equals(str))
+                    {
+                        cmd.addArg(str);
+                    }
+                }
+            }
         }
-        catch(Exception e) {
-            System.out.println("Failed to open file: " + filename);
-            System.out.println(e);
-            System.out.println(line);
+
+        processProperties(properties);
+        checkRequiredOptions();
+
+        return cmd;
+    }
+
+    /**
+     * Sets the values of Options using the values in <code>properties</code>.
+     *
+     * @param properties The value properties to be processed.
+     * @throws ParseException if there are any problems encountered
+     *                        while processing the properties.
+     */
+    protected void processProperties(Properties properties) throws ParseException
+    {
+        if (properties == null)
+        {
+            return;
+        }
+
+        for (Enumeration<?> e = properties.propertyNames(); e.hasMoreElements();)
+        {
+            String option = e.nextElement().toString();
+            
+            Option opt = options.getOption(option);
+            if (opt == null)
+            {
+                throw new UnrecognizedOptionException("Default option wasn't defined", option);
+            }
+            
+            // if the option is part of a group, check if another option of the group has been selected
+            OptionGroup group = options.getOptionGroup(opt);
+            boolean selected = group != null && group.getSelected() != null;
+            
+            if (!cmd.hasOption(option) && !selected)
+            {
+                // get the value from the properties instance
+                String value = properties.getProperty(option);
+
+                if (opt.hasArg())
+                {
+                    if (opt.getValues() == null || opt.getValues().length == 0)
+                    {
+                        try
+                        {
+                            opt.addValueForProcessing(value);
+                        }
+                        catch (RuntimeException exp) //NOPMD
+                        {
+                            // if we cannot add the value don't worry about it
+                        }
+                    }
+                }
+                else if (!("yes".equalsIgnoreCase(value)
+                        || "true".equalsIgnoreCase(value)
+                        || "1".equalsIgnoreCase(value)))
+                {
+                    // if the value is not yes, true or 1 then don't add the
+                    // option to the CommandLine
+                    continue;
+                }
+
+                cmd.addOption(opt);
+                updateRequiredOptions(opt);
+            }
         }
     }
 
-    public void parse_course_slots(String line) {
-        if(line.equals("Course slots:")) return;
-        if(line.equals("")) return;
-        int time = 0;
-        String[] data = line.split(",");
-        String day = data[0].trim();
-        String max = data[2].trim();
-        String min = data[3].trim();
-        if(day.equals("MO")) {
-            time += 10000;
-        } else if(day.equals("TU")) {
-            time += 20000;
-        } else if(day.equals("FR")) {
-            time += 50000;
-        } else {
-            System.out.println("Day " + line.charAt(0) + line.charAt(1) + " not recognized");
+    /**
+     * Throws a {@link MissingOptionException} if all of the required options
+     * are not present.
+     *
+     * @throws MissingOptionException if any of the required Options are not present.
+     */
+    protected void checkRequiredOptions() throws MissingOptionException
+    {
+        // if there are required options that have not been processed
+        if (!getRequiredOptions().isEmpty())
+        {
+            throw new MissingOptionException(getRequiredOptions());
         }
-        String tm = data[1].trim();
-        if(tm.length() > 4) {
-            time += 1000* Integer.parseInt(tm.substring(0,1));
-            time += 100* Integer.parseInt(tm.substring(1, 2));
-            time += 10* Integer.parseInt(tm.substring(3, 4));
-            time += Integer.parseInt(tm.substring(4, 5));
-        }
-        else {
-            time += 100 * Integer.parseInt(tm.substring(0, 1));
-            time += 10 * Integer.parseInt(tm.substring(2, 3));
-            time += Integer.parseInt(tm.substring(3, 4));
-        }
-        Slot tmp = new Slot(time);
-        tmp.coursemax = Integer.parseInt(max);
-        tmp.coursemin = Integer.parseInt(min);
-        this.slots.add(tmp);
     }
-    public void parse_lab_slots(String line) {
-        if(line.equals("Lab slots:")) return;
-        if(line.equals("")) return;
-        int time = 0;
-        String[] data = line.split(",");
-        String day = data[0].trim();
-        String max = data[2].trim();
-        String min = data[3].trim();
-        if(day.equals("MO")) {
-            time += 10000;
-        } else if(day.equals("TU")) {
-            time += 20000;
-        } else if(day.equals("FR")) {
-            time += 50000;
-        } else {
-            System.out.println("Day " + line.charAt(0) + line.charAt(1) + " not recognized");
-        }
-        String tm = data[1].trim();
-        if(tm.length() > 4) {
-            time += 1000* Integer.parseInt(tm.substring(0,1));
-            time += 100* Integer.parseInt(tm.substring(1, 2));
-            time += 10* Integer.parseInt(tm.substring(3, 4));
-            time += Integer.parseInt(tm.substring(4, 5));
-        }
-        else {
-            time += 100 * Integer.parseInt(tm.substring(0, 1));
-            time += 10 * Integer.parseInt(tm.substring(2, 3));
-            time += Integer.parseInt(tm.substring(3, 4));
-        }
-        boolean found = false;
-        for(int i = 0; i < this.slots.size(); i++) {
-            if(this.slots.get(i).time == time) {
-                found = true;
-                this.slots.get(i).labmax = Integer.parseInt(max);
-                this.slots.get(i).labmin = Integer.parseInt(min);
+
+    /**
+     * Process the argument values for the specified Option
+     * <code>opt</code> using the values retrieved from the
+     * specified iterator <code>iter</code>.
+     *
+     * @param opt The current Option
+     * @param iter The iterator over the flattened command line Options.
+     *
+     * @throws ParseException if an argument value is required
+     * and it is has not been found.
+     */
+    public void processArgs(Option opt, ListIterator<String> iter) throws ParseException
+    {
+        // loop until an option is found
+        while (iter.hasNext())
+        {
+            String str = iter.next();
+            
+            // found an Option, not an argument
+            if (getOptions().hasOption(str) && str.startsWith("-"))
+            {
+                iter.previous();
+                break;
+            }
+
+            // found a value
+            try
+            {
+                opt.addValueForProcessing(Util.stripLeadingAndTrailingQuotes(str));
+            }
+            catch (RuntimeException exp)
+            {
+                iter.previous();
                 break;
             }
         }
-        if(!found) {
-            Slot tmp = new Slot(time);
-            tmp.coursemax = Integer.parseInt(max);
-            tmp.coursemin = Integer.parseInt(min);
-            this.slots.add(tmp);
-        }
-    }
-    public void parse_courses(String line) {
-        if(line.equals("Courses:")) return;
-        if(line.equals("")) return;
-        String[] data = line.split(" ");
-        if(data.length > 4) {
-            int count = 0;
-            for (String s : data) {
-                if (s.equals("")) {
-                    count += 1;
-                }
-            }
-            String[] ndata = new String[data.length - count];
-            int i = 0;
-            for (String s : data){
-                if(!s.equals("")){
-                    ndata[i] = s;
-                    i += 1;
-                }
-            }
-            data = ndata;
-        }
-        Course tmp = new Course(data[0], Integer.parseInt(data[1]), Integer.parseInt(data[3]), true);
-        this.courses.add(tmp);
 
-    }
-    public void parse_labs(String line) {
-        if(line.equals("Labs:")) return;
-        if(line.equals("")) return;
-        String[] data = line.split(" ");
-        if(data.length > 4) {
-            int count = 0;
-            for (String s : data) {
-                if (s.equals("")) {
-                    count += 1;
-                }
-            }
-            String[] ndata = new String[data.length - count];
-            int i = 0;
-            for (String s : data){
-                if(!s.equals("")){
-                    ndata[i] = s;
-                    i += 1;
-                }
-            }
-            data = ndata;
-        }
-        if(data.length == 4){
-            Course tmp = new Course(data[0], Integer.parseInt(data[1]), Integer.parseInt(data[3]), false);
-            if(data[2].equals("LAB")){
-                tmp.tutorial_num = -1 * tmp.tutorial_num;
-            }
-            this.courses.add(tmp);
-        }
-        else if(data.length == 6){
-            Course tmp = new Course(data[0],Integer.parseInt(data[1]), Integer.parseInt(data[3]), Integer.parseInt(data[5]), false);
-            if(data[4].equals("LAB")){
-                tmp.tutorial_num = -1 * tmp.tutorial_num;
-            }
-            this.courses.add(tmp);
+        if (opt.getValues() == null && !opt.hasOptionalArg())
+        {
+            throw new MissingArgumentException(opt);
         }
     }
-    public void parse_not_compatible(String line) {
-        if(line.equals("Not compatible:")) return;
-        if(line.equals("")) return;
-        String[] data = line.split(",");
-        String[] one = data[0].trim().split(" ");
-        String[] two = data[1].trim().split(" ");
-        if(one.length > 4) {
-            int count = 0;
-            for (String s : data) {
-                if (s.equals("")) {
-                    count += 1;
-                }
-            }
-            String[] ndata = new String[one.length - count];
-            int i = 0;
-            for (String s : one){
-                if(!s.equals("")){
-                    ndata[i] = s;
-                    i += 1;
-                }
-            }
-            one = ndata;
+
+    /**
+     * Process the Option specified by <code>arg</code> using the values
+     * retrieved from the specified iterator <code>iter</code>.
+     *
+     * @param arg The String value representing an Option
+     * @param iter The iterator over the flattened command line arguments.
+     *
+     * @throws ParseException if <code>arg</code> does not represent an Option
+     */
+    protected void processOption(String arg, ListIterator<String> iter) throws ParseException
+    {
+        boolean hasOption = getOptions().hasOption(arg);
+
+        // if there is no option throw an UnrecognizedOptionException
+        if (!hasOption)
+        {
+            throw new UnrecognizedOptionException("Unrecognized option: " + arg, arg);
         }
 
-        if(two.length > 4) {
-            int count = 0;
-            for (String s : two) {
-                if (s.equals("")) {
-                    count += 1;
-                }
-            }
-            String[] ndata = new String[two.length - count];
-            int i = 0;
-            for (String s : two){
-                if(!s.equals("")){
-                    ndata[i] = s;
-                    i += 1;
-                }
-            }
-            two = ndata;
+        // get the option represented by arg
+        Option opt = (Option) getOptions().getOption(arg).clone();
+        
+        // update the required options and groups
+        updateRequiredOptions(opt);
+        
+        // if the option takes an argument value
+        if (opt.hasArg())
+        {
+            processArgs(opt, iter);
         }
-        Course first;
-        Course second;
-        if(one.length == 4 && two.length == 4){
-            if(one[2].equals("TUT") && two[2].equals("TUT")){
-                first = new Course(one[0], Integer.parseInt(one[1]), Integer.parseInt(one[3]), false);
-                second = new Course(two[0], Integer.parseInt(two[1]), Integer.parseInt(two[3]), false);
-                CoursePair cp = new CoursePair(first,second);
-                this.not_compatible.add(cp);
-            }
-            else if(one[2].equals("LAB") && two.equals("LAB")){
-                first = new Course(one[0], Integer.parseInt(one[1]), Integer.parseInt(one[3]), false);
-                second = new Course(two[0], Integer.parseInt(two[1]), Integer.parseInt(two[3]), false);
-                first.tutorial_num = -1 * first.tutorial_num;
-                second.tutorial_num = -1 * second.tutorial_num;
-                CoursePair cp = new CoursePair(first,second);
-                this.not_compatible.add(cp);
-            }
-            else{
-                first = new Course(one[0], Integer.parseInt(one[1]), Integer.parseInt(one[3]), true);
-                second = new Course(two[0], Integer.parseInt(two[1]), Integer.parseInt(two[3]), true);
-                CoursePair cp = new CoursePair(first,second);
-                this.not_compatible.add(cp);
-            }
-        }
-        else if(one.length == 6 && two.length == 6){
-            //Unsure about whether the boolean here should be true or false
-            first = new Course(one[0], Integer.parseInt(one[1]), Integer.parseInt(one[3]), Integer.parseInt(one[5]), false);
-            second = new Course(two[0], Integer.parseInt(two[1]), Integer.parseInt(two[3]), Integer.parseInt(two[5]), false);
-            if(one[4].equals("LAB") && two[4].equals("LAB")){
-                first.tutorial_num = -1 * first.tutorial_num;
-                second.tutorial_num = -1 * second.tutorial_num;
-            }
-            CoursePair cp = new CoursePair(first,second);
-            this.not_compatible.add(cp);
-        }
+        
+        // set the option on the command line
+        cmd.addOption(opt);
     }
-    public void parse_unwanted(String line) {
-        if(line.equals("Unwanted:")) return;
-        if(line.equals("")) return;
-        String[] data = line.split(",");
-        String[] course = data[0].trim().split(" ");
-        if(course.length > 4) {
-            int count = 0;
-            for (String s : course) {
-                if (s.equals("")) {
-                    count += 1;
-                }
-            }
-            String[] ndata = new String[course.length - count];
-            int i = 0;
-            for (String s : course){
-                if(!s.equals("")){
-                    ndata[i] = s;
-                    i += 1;
-                }
-            }
-            course = ndata;
-        }
-        CourseTime ct = null;
-        Course tmp;
-        int time = 0;
-        String dt = data[1].trim();
-        if(dt.equals("MO")) {
-            time += 10000;
-        } else if(dt.equals("TU")) {
-            time += 20000;
-        } else if(dt.equals("FR")) {
-            time += 50000;
-        } else {
-            System.out.println("Day " + line.charAt(0) + line.charAt(1) + " not recognized");
-        }
-        String tm = data[2].trim();
-        if(tm.length() > 4) {
-            time += 1000* Integer.parseInt(tm.substring(0,1));
-            time += 100* Integer.parseInt(tm.substring(1, 2));
-            time += 10* Integer.parseInt(tm.substring(3, 4));
-            time += Integer.parseInt(tm.substring(4, 5));
-        }
-        else {
-            time += 100 * Integer.parseInt(tm.substring(0, 1));
-            time += 10 * Integer.parseInt(tm.substring(2, 3));
-            time += Integer.parseInt(tm.substring(3, 4));
-        }
-        if(course.length == 4){
-            if(course[2].equals("LEC")){
-                tmp = new Course(course[0], Integer.parseInt(course[1]), Integer.parseInt(course[3]), true);
-                ct = new CourseTime(tmp, time);
-            }
-            if(course[2].equals("TUT")){
-                tmp = new Course(course[0], Integer.parseInt(course[1]), Integer.parseInt(course[3]), false);
-                ct = new CourseTime(tmp, time);
-            }
-            if(course[2].equals("LAB")){
-                tmp = new Course(course[0], Integer.parseInt(course[1]), Integer.parseInt(course[3]), false);
-                tmp.tutorial_num = -1 * tmp.tutorial_num;
-                ct = new CourseTime(tmp, time);
-            }
-        }
-        else if(course.length == 6){
-            //Again unsure of what the boolean value should be
-            tmp = new Course(course[0], Integer.parseInt(course[1]), Integer.parseInt(course[3]),Integer.parseInt(course[5]), false);
-            if(course[4].equals("LAB")){
-                tmp.tutorial_num = -1 * tmp.tutorial_num;
-            }
-            ct = new CourseTime(tmp, time);
-        }
-        this.unwanted.add(ct);
-    }
-    public void parse_preferences(String line) {
-        if(line.equals("Preferences:")) return;
-        if(line.equals("")) return;
-        Preference pref = null;
-        Course tmp = null;
-        int time = 0;
-        int value = 0;
-        String[] data = line.split(",");
-        String[] course = data[2].trim().split(" ");
-        if(course.length > 4) {
-            int count = 0;
-            for (String s : course) {
-                if (s.equals("")) {
-                    count += 1;
-                }
-            }
-            String[] ndata = new String[course.length - count];
-            int i = 0;
-            for (String s : course){
-                if(!s.equals("")){
-                    ndata[i] = s;
-                    i += 1;
-                }
-            }
-            course = ndata;
-        }
-        String dt = data[0].trim();
-        String tm = data[1].trim();
-        if(dt.equals("MO")) {
-            time += 10000;
-        } else if(dt.equals("TU")) {
-            time += 20000;
-        } else if(dt.equals("FR")) {
-            time += 50000;
-        } else {
-            System.out.println("Day " + line.charAt(0) + line.charAt(1) + " not recognized");
-        }
-        if(tm.length() > 4) {
-            time += 1000* Integer.parseInt(tm.substring(0,1));
-            time += 100* Integer.parseInt(tm.substring(1, 2));
-            time += 10* Integer.parseInt(tm.substring(3, 4));
-            time += Integer.parseInt(tm.substring(4, 5));
-        }
-        else {
-            time += 100 * Integer.parseInt(tm.substring(0, 1));
-            time += 10 * Integer.parseInt(tm.substring(2, 3));
-            time += Integer.parseInt(tm.substring(3, 4));
-        }
-        value = Integer.parseInt(data[3].trim());
 
-        if(course.length == 4){
-            tmp = new Course(course[0], Integer.parseInt(course[1]),Integer.parseInt(course[3]),true);
-            if(course[2].equals("LAB")){
-                tmp.tutorial_num = -1 * tmp.tutorial_num;
-            }
-        }
-        else if(course.length == 6){
-            tmp = new Course(course[0], Integer.parseInt(course[1]),Integer.parseInt(course[3]), Integer.parseInt(course[5]),true);
-            if(course[4].equals("LAB")){
-                tmp.tutorial_num = -1 * tmp.tutorial_num;
-            }
-        }
-        pref = new Preference(tmp, time, value);
-        this.preferences.add(pref);
-    }
-    public void parse_pair(String line) {
-        if(line.equals("Pair:")) return;
-        if(line.equals("")) return;
-        String[] data = line.split(",");
-        String[] one = data[0].trim().split(" ");
-        String[] two = data[1].trim().split(" ");
-        if(one.length > 4) {
-            int count = 0;
-            for (String s : data) {
-                if (s.equals("")) {
-                    count += 1;
-                }
-            }
-            String[] ndata = new String[one.length - count];
-            int i = 0;
-            for (String s : one){
-                if(!s.equals("")){
-                    ndata[i] = s;
-                    i += 1;
-                }
-            }
-            one = ndata;
+    /**
+     * Removes the option or its group from the list of expected elements.
+     * 
+     * @param opt
+     */
+    private void updateRequiredOptions(Option opt) throws ParseException
+    {
+        // if the option is a required option remove the option from
+        // the requiredOptions list
+        if (opt.isRequired())
+        {
+            getRequiredOptions().remove(opt.getKey());
         }
 
-        if(two.length > 4) {
-            int count = 0;
-            for (String s : two) {
-                if (s.equals("")) {
-                    count += 1;
-                }
-            }
-            String[] ndata = new String[two.length - count];
-            int i = 0;
-            for (String s : two){
-                if(!s.equals("")){
-                    ndata[i] = s;
-                    i += 1;
-                }
-            }
-            two = ndata;
-        }
-        Course first;
-        Course second;
-        if(one.length == 4 && two.length == 4){
-            if(one[2].equals("TUT") && two[2].equals("TUT")){
-                first = new Course(one[0], Integer.parseInt(one[1]), Integer.parseInt(one[3]), false);
-                second = new Course(two[0], Integer.parseInt(two[1]), Integer.parseInt(two[3]), false);
-                CoursePair cp = new CoursePair(first,second);
-                this.pair.add(cp);
-            }
-            else if(one[2].equals("LAB") && two[2].equals("LAB")){
-                first = new Course(one[0], Integer.parseInt(one[1]), Integer.parseInt(one[3]), false);
-                second = new Course(two[0], Integer.parseInt(two[1]), Integer.parseInt(two[3]), false);
-                first.tutorial_num = -1 * first.tutorial_num;
-                second.tutorial_num = -1 * second.tutorial_num;
-                CoursePair cp = new CoursePair(first,second);
-                this.pair.add(cp);
-            }
-            else{
-                first = new Course(one[0], Integer.parseInt(one[1]), Integer.parseInt(one[3]), true);
-                second = new Course(two[0], Integer.parseInt(two[1]), Integer.parseInt(two[3]), true);
-                CoursePair cp = new CoursePair(first,second);
-                this.pair.add(cp);
-            }
-        }
-        else if(one.length == 6 && two.length == 6){
-            //Unsure about whether the boolean here should be true or false
-            first = new Course(one[0], Integer.parseInt(one[1]), Integer.parseInt(one[3], Integer.parseInt(one[5])), true);
-            second = new Course(two[0], Integer.parseInt(two[1]), Integer.parseInt(two[3], Integer.parseInt(two[5])), true);
-            if(one[4].equals("LAB") && two[4].equals("LAB")){
-                first.tutorial_num = -1 * first.tutorial_num;
-                second.tutorial_num = -1 * second.tutorial_num;
-            }
-            CoursePair cp = new CoursePair(first,second);
-            this.pair.add(cp);
-        }
-    }
-    public void parse_partial_assignments(String line) {
-        if(line.equals("Partial assignments:") || line.equals("")) return;
-        Course course = null;
-        int time = 0;
+        // if the option is in an OptionGroup make that option the selected
+        // option of the group
+        if (getOptions().getOptionGroup(opt) != null)
+        {
+            OptionGroup group = getOptions().getOptionGroup(opt);
 
-        String[] info = line.split(",");
-        course = course_parse(info[0]);
-        String timeline = info[1] + ", " + info[2];
-        time = time_parse(timeline);
-
-        CourseTime ct = new CourseTime(course, time);
-        this.partial.add(ct);
-    }
-    public int time_parse(String line) {
-        int time = 0;
-        String[] data = line.split(",");
-        String day = data[0].trim();
-        if(day.equals("MO")) {
-            time += 10000;
-        } else if(day.equals("TU")) {
-            time += 20000;
-        } else if(day.equals("FR")) {
-            time += 50000;
-        } else {
-            System.out.println("Day " + line.charAt(0) + line.charAt(1) + " not recognized");
-        }
-        String tm = data[1].trim();
-        if(tm.length() > 4) {
-            time += 1000* Integer.parseInt(tm.substring(0,1));
-            time += 100* Integer.parseInt(tm.substring(1, 2));
-            time += 10* Integer.parseInt(tm.substring(3, 4));
-            time += Integer.parseInt(tm.substring(4, 5));
-        }
-        else {
-            time += 100 * Integer.parseInt(tm.substring(0, 1));
-            time += 10 * Integer.parseInt(tm.substring(2, 3));
-            time += Integer.parseInt(tm.substring(3, 4));
-        }
-
-        return time;
-    }
-    public Course course_parse(String CourseInfo) {
-        String department = null;
-        boolean isLecture = false;
-        int courseNum = 0;
-        int LectureNum = 0;
-        int LabNum = 0;
-        Course courseP = null;
-        String[] info = CourseInfo.split(" ");
-        if(info.length > 4) {
-            int count = 0;
-            for (String s : info) {
-                if (s.equals("")) {
-                    count += 1;
-                }
+            if (group.isRequired())
+            {
+                getRequiredOptions().remove(group);
             }
-            String[] ndata = new String[info.length - count];
-            int i = 0;
-            for (String s : info){
-                if(!s.equals("")){
-                    ndata[i] = s;
-                    i += 1;
-                }
-            }
-            info = ndata;
+
+            group.setSelected(opt);
         }
-        if (info.length == 4) {
-            department = info[0];
-            courseNum = Integer.parseInt(info[1]);
-            if (info[2] == "LEC") {
-                isLecture = true;
-                LectureNum = Integer.parseInt(info[3]);
-                Course course = new Course(department, courseNum, LectureNum, isLecture);
-				/*
-				course.name = department;
-				course.number = courseNum;
-				course.lecture_num = LectureNum;
-				course.is_lecture = isLecture;
-				*/
-                courseP = course;
-            }
-            else {
-                LabNum = Integer.parseInt(info[3]);
-                Course course = new Course(department, courseNum, LabNum, isLecture);
-				/*
-				course.name = department;
-				course.number = courseNum;
-				course.tut_num = LabNum;
-				course.is_lecture = isLecture;
-				*/
-                courseP = course;
-            }
-        }
-        if (info.length == 6) {
-            department = info[0];
-            courseNum = Integer.parseInt(info[1]);
-            LectureNum = Integer.parseInt(info[3]);
-            if (info[4] == "TUT") isLecture = false;
-            if (info[4].equals("LAB")) isLecture = false;
-            LabNum = Integer.parseInt(info[5]);
-
-            Course course = new Course(department, courseNum, LectureNum, LabNum,isLecture);
-			/*
-			course.name = department;
-			course.number = courseNum;
-			course.lecture_num = LectureNum;
-			course.is_lecture = isLecture;
-			course.tut_num = LabNum;
-			*/
-            courseP = course;
-        }
-        return courseP;
-    }
-}
-
-class CourseTime {
-    public Course course;
-    public int time;
-    public CourseTime() {
-        course = null;
-        time = 0;
-    }
-    public CourseTime(Course c, int t) {
-        course = c;
-        time = t;
-    }
-}
-
-class CoursePair {
-    public Course first;
-    public Course second;
-    public CoursePair() {
-        first = null;
-        second = null;
-    }
-    public CoursePair(Course one, Course two) {
-        first = one;
-        second = two;
-    }
-}
-
-class Preference {
-    public Course course;
-    public int time;
-    public int value;
-    public Preference() {
-        course = null;
-        time = 0;
-        value = 0;
-    }
-    public Preference(Course c, int t, int val) {
-        course = c;
-        time = t;
-        value = val;
     }
 }

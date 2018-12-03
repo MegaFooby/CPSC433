@@ -1,4 +1,5 @@
 import javafx.scene.layout.CornerRadii;
+import org.apache.commons.cli.*;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
@@ -12,6 +13,9 @@ public class Scheduler {
     public static HashMap<Integer, Integer> lectuttime_collisions = new HashMap(41);
     public static boolean debug = false;
     public static int best = Integer.MIN_VALUE;
+    public static int pen_coursemin = 1;
+    public static int pen_labmin = 1;
+    public static int pen_notpaired = 1;
 
     /*public static final int lectime_collisions[][] = {
         //monday
@@ -66,7 +70,7 @@ public class Scheduler {
             20800, 20900, 21000, 21100, 21200, 21300, 21400, 21500, 21600,
             21700, 21800, 21900, 22000,
             //friday
-            10800, 11000, 11200, 11400, 11600, 11800
+            50800, 51000, 51200, 51400, 51600, 51800
     };
 
     public static void main(String args[]) {
@@ -100,7 +104,35 @@ public class Scheduler {
         lectuttime_collisions.put(21400, 21400);lectuttime_collisions.put(21400, 21500);lectuttime_collisions.put(21530, 21500);lectuttime_collisions.put(21530, 21600);
         lectuttime_collisions.put(21700, 21700);lectuttime_collisions.put(21700, 21800);lectuttime_collisions.put(21830, 21800);lectuttime_collisions.put(21830, 21900);
 
-        if(args[1].equalsIgnoreCase("DEBUG")) debug = true;
+        Options options = new Options();
+        Option pcm = new Option("pcm","coursepen", true, "Course min penalty");
+        options.addOption(pcm);
+        Option plm = new Option("plm", "labpen", true, "Lab min penalty");
+        options.addOption(plm);
+        Option pnp = new Option("pnp", "pairpen", true, "Not pair penalty");
+        options.addOption(pnp);
+        Option debugo = new Option("d", "debug", false, "DEBUG mode on");
+        options.addOption(debugo);
+
+        CommandLineParser parser = new DefaultParser();
+        HelpFormatter hf = new HelpFormatter();
+        CommandLine cmd = null;
+
+        try {
+            cmd = parser.parse(options, args);
+        } catch (ParseException e) {
+            System.out.println(e.getMessage());
+            hf.printHelp("utility-name", options);
+
+            System.exit(1);
+        }
+        if(cmd.hasOption("pcm"))
+            pen_coursemin = Integer.parseInt(cmd.getOptionValue("pcm"));
+        if(cmd.hasOption("plm"))
+            pen_labmin = Integer.parseInt(cmd.getOptionValue("plm"));
+        if(cmd.hasOption("pnp"))
+            pen_notpaired = Integer.parseInt(cmd.getOptionValue("pnp"));
+        if(cmd.hasOption("d")) debug = true;
 
         Parser parse = new Parser(args[0]);
 
@@ -122,9 +154,15 @@ public class Scheduler {
         String[] result = new String[parse.courses.size()];
         int count = 0;
         for(Slot s : sols){
+            if(s.course.size() == 0) continue;
             String tmp = "";
             for (Course c : s.course) {
-                tmp = tmp + c + "      ";
+                if(c.is_lecture)
+                    tmp = tmp + c.name + " LEC " + c.lecture_num + "      ";
+                if(!c.is_lecture && c.lecture_num == 0)
+                    tmp = tmp + c.name + " TUT " + c.tutorial_num + "      ";
+                if(c.lecture_num != 0 && c.tutorial_num != 0)
+                    tmp = tmp + c.name + " LEC " + c.lecture_num + " TUT " + c.tutorial_num + "      ";
                 int time = s.time;
                 String str = Integer.toString(s.time);
                 String dayOf = str.substring(0, 1);
@@ -149,9 +187,23 @@ public class Scheduler {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-
-        Arrays.sort(result);
+        int nullcount = 0;
         for(String s : result){
+            if(s == null){
+                 nullcount++;
+            }
+        }
+        String[] result2 = new String[parse.courses.size() - nullcount];
+        int j = 0;
+        for(String s : result){
+            if(s == null){
+                continue;
+            }
+            result2[j] = s;
+            j++;
+        }
+        Arrays.sort(result2);
+        for(String s : result2){
             System.out.println(s);
             pw.println(s);
         }
@@ -172,16 +224,18 @@ public class Scheduler {
             //Fact tmp = and_tree(tmp_cur);
             evaluate(tmp_cur, i, parse);
 
-            if (tmp_cur != null && tmp_cur.score > best) {//don't add if null or worse
+            if (tmp_cur.score > best) {//don't add if null or worse
                 possible.add(tmp_cur);
             }
         }
         //evaluate and find the best
         //need to change this so it doesn't create and evaluate every single possibility
         Fact solution = null;
+        int best = 0;
         for(int i = 0; i < possible.size(); i++) {
-            if(possible.get(i).score > solution.score) {
+            if(possible.get(i).score > best) {
                 solution = possible.get(i);
+                best = possible.get(i).score;
             }
         }
         return solution;
@@ -260,6 +314,10 @@ class Course {
         this.number = number;
         this.lecture_num = lecture_num;
         this.is_lecture = is_lecture;
+        if(!is_lecture){
+            this.tutorial_num = lecture_num;
+            this.lecture_num = 0;
+        }
     }
     public Course(String name, int number, int lecture_num, int tutorial_num, boolean is_lecture) {
         this.name = name;
@@ -383,37 +441,64 @@ class Fact {
     }
 
     public int eval(Fact fact, int slotnum, int coursenum, Parser parse){
-        int cnum = 0, lnum = 0;
-        for(int i = 0; i < fact.slots[slotnum].course.size(); i++) {
-            if(fact.slots[slotnum].course.get(i).is_lecture) {
-                cnum++;
-            } else {
-                lnum++;
+        int score = 0;
+        for(Slot s : fact.slots){
+            int min = s.coursemin;
+            int leccount = 0;
+            int labcount = 0;
+            for(Course c : s.course){
+                if(c.is_lecture) leccount += 1;
+                else labcount += 1;
+            }
+            if(s.coursemin > leccount) score -= Scheduler.pen_coursemin;
+            else score += Scheduler.pen_coursemin;
+            if(s.labmin > labcount) score -= Scheduler.pen_labmin;
+            else score += Scheduler.pen_labmin;
+
+        }
+
+        int nonpref = 0;
+        for(Slot s : fact.slots){
+            for(Preference p : parse.preferences){
+                for(Course c : s.course){
+                    if (c.equals(p.course) && s.time != p.time){
+                        nonpref += p.value;
+                    }
+                }
             }
         }
-        if(fact.slots[slotnum].coursemax < cnum) {
-            return Integer.MIN_VALUE;
+        score -= nonpref;
+
+        for(CoursePair cp : parse.pair){
+            for(Slot s : fact.slots){
+                if(s.course.contains(cp.first) && !(s.course.contains(cp.second))){
+                    score -= Scheduler.pen_notpaired;
+                }
+                else score += Scheduler.pen_notpaired;
+                if(s.course.contains(cp.second) && !(s.course.contains(cp.first))){
+                    score -= Scheduler.pen_notpaired;
+                }
+                else score += Scheduler.pen_notpaired;
+            }
         }
-        if(fact.slots[slotnum].labmax < lnum) {
-            return Integer.MIN_VALUE;
-        }
-        return Integer.MIN_VALUE;
+        fact.score = score;
+        return score;
     }
     //try to use the other one because this is slow
     public boolean assign(int time, Course course) {
         int slotnum, coursenum;
-        for(slotnum = 0; slotnum < slots.length; slotnum++) {
-            if(time == slots[slotnum].time) {
+        for(slotnum = 0; slotnum < this.slots.length; slotnum++) {
+            if(time == this.slots[slotnum].time) {
                 break;
             }
         }
-        if(slotnum == slots.length) return false;
-        for(coursenum = 0; coursenum < unassigned.size(); coursenum++) {
-            if(course == unassigned.get(coursenum) ||course.equals(unassigned.get(coursenum))) {
+        if(slotnum == this.slots.length) return false;
+        for(coursenum = 0; coursenum < this.unassigned.size(); coursenum++) {
+            if(course == this.unassigned.get(coursenum) || course.equals(this.unassigned.get(coursenum))) {
                 break;
             }
         }
-        if(coursenum == unassigned.size()) return false;
+        if(coursenum == this.unassigned.size()) return false;
         this.slots[slotnum].course.add(this.unassigned.remove(coursenum));
         return true;
     }
