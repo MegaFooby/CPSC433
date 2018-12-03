@@ -8,6 +8,7 @@ public class Scheduler {
 	public static HashMap<Integer, Integer[]> lectuttime_collisions = new HashMap(41);
 	public static boolean debug = false;
 	public static int best = Integer.MIN_VALUE;
+	public static Parser parse;
 	
 	/*public static final int lectime_collisions[][] = {
 		//monday
@@ -95,7 +96,7 @@ public class Scheduler {
 		
 		if(args[1].equalsIgnoreCase("DEBUG")) debug = true;
 		
-		Parser parse = new Parser(args[0]);
+		parse = new Parser(args[0]);
 		
 		Fact foo = new Fact(parse.courses);
 		foo.slots = (Slot[])parse.slots.toArray();
