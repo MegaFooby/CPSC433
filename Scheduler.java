@@ -294,8 +294,40 @@ class Fact {
 			}
 			
 		}
-		this.slots[slotnum].course.add(this.unassigned.remove(coursenum));
-	}
+	    //traverses through the unwatned vector and compares the slot time to each CourseTime time and then compares the course to see if they are equal
+	    for(CourseTime c : parse.unwanted){
+	      if(c.time == slots[slotnum].time && c.course.equals(this.unassigned.get(coursenum))) return;
+
+	    }
+	    if(this.unassigned.get(coursenum).number >= 500){
+	      for(Course c : slot[slotnum].course){
+		if(c.number >= 500){
+		  return;
+		}
+	      }
+	    }
+	    int fri_slotnum = 0;
+	    if(this.unassigned.get(coursenum).is_lecture){
+	    if(this.unassigned.get(coursenum).time <= 12000){
+	      fri_slotnum = this.unassigned.get(coursenum).time + 40000;
+	      //TODO: add into friday time slot at end
+	      //friday time slot is 0 if none of the above conditions are true
+	      }
+	    }
+	    //departmental contraints
+	    if(this.unassigned.get(coursenum).name.equals("CPSC")){
+	    if(this.unassigned.get(coursenum).is_lecture && slots[slotnum].time == 21130) return;
+
+	    if(this.unassigned.get(coursenum).lecture_num == 9){
+	      if(slots[slotnum].time < 51800 && slots[slotnum].time > 50000) return;
+	      else if(slots[slotnum].time < 21800 && slots[slotnum].time > 20000) return;
+	      else if(slots[slotnum].time < 11800 && slots[slotnum].time > 10000) return;
+	    }
+	    if(this.unassigned.get(coursenum).lecture_num == 813){
+	    }
+	    }
+			this.slots[slotnum].course.add(this.unassigned.remove(coursenum));
+		}
 	
 	//try to use the other one because this is slow
 	public boolean assign(int time, Course course) {
