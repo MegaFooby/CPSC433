@@ -81,59 +81,78 @@ public class Parser {
         if(line.equals("Course slots:")) return;
         if(line.equals("")) return;
         int time = 0;
-        if(line.charAt(0) == 'M' && line.charAt(1) == 'O') {
+        String[] data = line.split(",");
+        String day = data[0].trim();
+        String max = data[2].trim();
+        String min = data[3].trim();
+        if(day.equals("MO")) {
             time += 10000;
-        } else if(line.charAt(0) == 'T' && line.charAt(1) == 'U') {
+        } else if(day.equals("TU")) {
             time += 20000;
-        } else if(line.charAt(0) == 'F' && line.charAt(1) == 'R') {
+        } else if(day.equals("FR")) {
             time += 50000;
         } else {
             System.out.println("Day " + line.charAt(0) + line.charAt(1) + " not recognized");
         }
-        if(line.charAt(4) != ' ') {
-            time += 1000* Integer.parseInt(line.substring(4, 5));
+        String tm = data[1].trim();
+        if(tm.length() > 4) {
+            time += 1000* Integer.parseInt(tm.substring(0,1));
+            time += 100* Integer.parseInt(tm.substring(1, 2));
+            time += 10* Integer.parseInt(tm.substring(3, 4));
+            time += Integer.parseInt(tm.substring(4, 5));
         }
-        time += 100* Integer.parseInt(line.substring(5, 6));
-        time += 10* Integer.parseInt(line.substring(7, 8));
-        time += Integer.parseInt(line.substring(8, 9));
-
+        else {
+            time += 100 * Integer.parseInt(tm.substring(0, 1));
+            time += 10 * Integer.parseInt(tm.substring(2, 3));
+            time += Integer.parseInt(tm.substring(3, 4));
+        }
         Slot tmp = new Slot(time);
-        tmp.coursemax = Integer.parseInt(line.substring(11, 12));
-        tmp.coursemin = Integer.parseInt(line.substring(14, 15));
+        tmp.coursemax = Integer.parseInt(max);
+        tmp.coursemin = Integer.parseInt(min);
         this.slots.add(tmp);
     }
     public void parse_lab_slots(String line) {
         if(line.equals("Lab slots:")) return;
         if(line.equals("")) return;
         int time = 0;
-        if(line.charAt(0) == 'M' && line.charAt(1) == 'O') {
+        String[] data = line.split(",");
+        String day = data[0].trim();
+        String max = data[2].trim();
+        String min = data[3].trim();
+        if(day.equals("MO")) {
             time += 10000;
-        } else if(line.charAt(0) == 'T' && line.charAt(1) == 'U') {
+        } else if(day.equals("TU")) {
             time += 20000;
-        } else if(line.charAt(0) == 'F' && line.charAt(1) == 'R') {
+        } else if(day.equals("FR")) {
             time += 50000;
         } else {
             System.out.println("Day " + line.charAt(0) + line.charAt(1) + " not recognized");
         }
-        if(line.charAt(4) != ' ') {
-            time += 1000* Integer.parseInt(line.substring(4, 5));
+        String tm = data[1].trim();
+        if(tm.length() > 4) {
+            time += 1000* Integer.parseInt(tm.substring(0,1));
+            time += 100* Integer.parseInt(tm.substring(1, 2));
+            time += 10* Integer.parseInt(tm.substring(3, 4));
+            time += Integer.parseInt(tm.substring(4, 5));
         }
-        time += 100* Integer.parseInt(line.substring(5, 6));
-        time += 10* Integer.parseInt(line.substring(7, 8));
-        time += Integer.parseInt(line.substring(8, 9));
+        else {
+            time += 100 * Integer.parseInt(tm.substring(0, 1));
+            time += 10 * Integer.parseInt(tm.substring(2, 3));
+            time += Integer.parseInt(tm.substring(3, 4));
+        }
         boolean found = false;
-        for(int i = 0; i < slots.size(); i++) {
-            if(slots.get(i).time == time) {
+        for(int i = 0; i < this.slots.size(); i++) {
+            if(this.slots.get(i).time == time) {
                 found = true;
-                slots.get(i).labmax = Integer.parseInt(line.substring(11, 12));
-                slots.get(i).labmin = Integer.parseInt(line.substring(14, 15));
+                this.slots.get(i).labmax = Integer.parseInt(max);
+                this.slots.get(i).labmin = Integer.parseInt(min);
                 break;
             }
         }
         if(!found) {
             Slot tmp = new Slot(time);
-            tmp.coursemax = Integer.parseInt(line.substring(11, 12));
-            tmp.coursemin = Integer.parseInt(line.substring(14, 15));
+            tmp.coursemax = Integer.parseInt(max);
+            tmp.coursemin = Integer.parseInt(min);
             this.slots.add(tmp);
         }
     }
@@ -141,6 +160,23 @@ public class Parser {
         if(line.equals("Courses:")) return;
         if(line.equals("")) return;
         String[] data = line.split(" ");
+        if(data.length > 4) {
+            int count = 0;
+            for (String s : data) {
+                if (s.equals("")) {
+                    count += 1;
+                }
+            }
+            String[] ndata = new String[data.length - count];
+            int i = 0;
+            for (String s : data){
+                if(!s.equals("")){
+                    ndata[i] = s;
+                    i += 1;
+                }
+            }
+            data = ndata;
+        }
         Course tmp = new Course(data[0], Integer.parseInt(data[1]), Integer.parseInt(data[3]), true);
         this.courses.add(tmp);
 
@@ -149,6 +185,23 @@ public class Parser {
         if(line.equals("Labs:")) return;
         if(line.equals("")) return;
         String[] data = line.split(" ");
+        if(data.length > 4) {
+            int count = 0;
+            for (String s : data) {
+                if (s.equals("")) {
+                    count += 1;
+                }
+            }
+            String[] ndata = new String[data.length - count];
+            int i = 0;
+            for (String s : data){
+                if(!s.equals("")){
+                    ndata[i] = s;
+                    i += 1;
+                }
+            }
+            data = ndata;
+        }
         if(data.length == 4){
             Course tmp = new Course(data[0], Integer.parseInt(data[1]), Integer.parseInt(data[3]), false);
             if(data[2].equals("LAB")){
@@ -170,6 +223,41 @@ public class Parser {
         String[] data = line.split(",");
         String[] one = data[0].trim().split(" ");
         String[] two = data[1].trim().split(" ");
+        if(one.length > 4) {
+            int count = 0;
+            for (String s : data) {
+                if (s.equals("")) {
+                    count += 1;
+                }
+            }
+            String[] ndata = new String[one.length - count];
+            int i = 0;
+            for (String s : one){
+                if(!s.equals("")){
+                    ndata[i] = s;
+                    i += 1;
+                }
+            }
+            one = ndata;
+        }
+
+        if(two.length > 4) {
+            int count = 0;
+            for (String s : two) {
+                if (s.equals("")) {
+                    count += 1;
+                }
+            }
+            String[] ndata = new String[two.length - count];
+            int i = 0;
+            for (String s : two){
+                if(!s.equals("")){
+                    ndata[i] = s;
+                    i += 1;
+                }
+            }
+            two = ndata;
+        }
         Course first;
         Course second;
         if(one.length == 4 && two.length == 4){
@@ -211,6 +299,23 @@ public class Parser {
         if(line.equals("")) return;
         String[] data = line.split(",");
         String[] course = data[0].trim().split(" ");
+        if(course.length > 4) {
+            int count = 0;
+            for (String s : course) {
+                if (s.equals("")) {
+                    count += 1;
+                }
+            }
+            String[] ndata = new String[course.length - count];
+            int i = 0;
+            for (String s : course){
+                if(!s.equals("")){
+                    ndata[i] = s;
+                    i += 1;
+                }
+            }
+            course = ndata;
+        }
         CourseTime ct = null;
         Course tmp;
         int time = 0;
@@ -270,6 +375,23 @@ public class Parser {
         int value = 0;
         String[] data = line.split(",");
         String[] course = data[2].trim().split(" ");
+        if(course.length > 4) {
+            int count = 0;
+            for (String s : course) {
+                if (s.equals("")) {
+                    count += 1;
+                }
+            }
+            String[] ndata = new String[course.length - count];
+            int i = 0;
+            for (String s : course){
+                if(!s.equals("")){
+                    ndata[i] = s;
+                    i += 1;
+                }
+            }
+            course = ndata;
+        }
         String dt = data[0].trim();
         String tm = data[1].trim();
         if(dt.equals("MO")) {
@@ -315,6 +437,41 @@ public class Parser {
         String[] data = line.split(",");
         String[] one = data[0].trim().split(" ");
         String[] two = data[1].trim().split(" ");
+        if(one.length > 4) {
+            int count = 0;
+            for (String s : data) {
+                if (s.equals("")) {
+                    count += 1;
+                }
+            }
+            String[] ndata = new String[one.length - count];
+            int i = 0;
+            for (String s : one){
+                if(!s.equals("")){
+                    ndata[i] = s;
+                    i += 1;
+                }
+            }
+            one = ndata;
+        }
+
+        if(two.length > 4) {
+            int count = 0;
+            for (String s : two) {
+                if (s.equals("")) {
+                    count += 1;
+                }
+            }
+            String[] ndata = new String[two.length - count];
+            int i = 0;
+            for (String s : two){
+                if(!s.equals("")){
+                    ndata[i] = s;
+                    i += 1;
+                }
+            }
+            two = ndata;
+        }
         Course first;
         Course second;
         if(one.length == 4 && two.length == 4){
@@ -356,7 +513,7 @@ public class Parser {
         Course course = null;
         int time = 0;
 
-        String[] info = line.split(", ");
+        String[] info = line.split(",");
         course = course_parse(info[0]);
         String timeline = info[1] + ", " + info[2];
         time = time_parse(timeline);
@@ -366,26 +523,28 @@ public class Parser {
     }
     public int time_parse(String line) {
         int time = 0;
-        if (line.charAt(0) == 'M' && line.charAt(1) == 'O') {
+        String[] data = line.split(",");
+        String day = data[0].trim();
+        if(day.equals("MO")) {
             time += 10000;
-        } else if (line.charAt(0) == 'T' && line.charAt(1) == 'U') {
+        } else if(day.equals("TU")) {
             time += 20000;
-        } else if (line.charAt(0) == 'F' && line.charAt(1) == 'R') {
+        } else if(day.equals("FR")) {
             time += 50000;
         } else {
             System.out.println("Day " + line.charAt(0) + line.charAt(1) + " not recognized");
         }
-        if (line.charAt(5) == ':') {
-            time += 100 * Integer.parseInt(line.substring(4, 5));
-            time += 10 * Integer.parseInt(line.substring(6, 7));
-            time += Integer.parseInt(line.substring(7, 8));
-        } else {
-            if (line.charAt(4) != ' ') {
-                time += 1000 * Integer.parseInt(line.substring(4, 5));
-            }
-            time += 100 * Integer.parseInt(line.substring(5, 6));
-            time += 10 * Integer.parseInt(line.substring(7, 8));
-            time += Integer.parseInt(line.substring(8, 9));
+        String tm = data[1].trim();
+        if(tm.length() > 4) {
+            time += 1000* Integer.parseInt(tm.substring(0,1));
+            time += 100* Integer.parseInt(tm.substring(1, 2));
+            time += 10* Integer.parseInt(tm.substring(3, 4));
+            time += Integer.parseInt(tm.substring(4, 5));
+        }
+        else {
+            time += 100 * Integer.parseInt(tm.substring(0, 1));
+            time += 10 * Integer.parseInt(tm.substring(2, 3));
+            time += Integer.parseInt(tm.substring(3, 4));
         }
 
         return time;
@@ -398,6 +557,23 @@ public class Parser {
         int LabNum = 0;
         Course courseP = null;
         String[] info = CourseInfo.split(" ");
+        if(info.length > 4) {
+            int count = 0;
+            for (String s : info) {
+                if (s.equals("")) {
+                    count += 1;
+                }
+            }
+            String[] ndata = new String[info.length - count];
+            int i = 0;
+            for (String s : info){
+                if(!s.equals("")){
+                    ndata[i] = s;
+                    i += 1;
+                }
+            }
+            info = ndata;
+        }
         if (info.length == 4) {
             department = info[0];
             courseNum = Integer.parseInt(info[1]);

@@ -1,3 +1,5 @@
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.*;
 
 public class Scheduler {
@@ -113,8 +115,45 @@ public class Scheduler {
         //parse input file
         Fact solution = and_tree(foo);
         //print or save solution
-        
+        System.out.println("Eval Value: " + solution.score);
+        Slot[] sols = solution.slots;
+        String[] result = new String[parse.courses.size()];
+        int count = 0;
+        for(Slot s : sols){
+            String tmp = "";
+            for (Course c : s.course) {
+                tmp = tmp + c + "      ";
+                int time = s.time;
+                String str = Integer.toString(s.time);
+                String dayOf = str.substring(0, 1);
+                String hour = str.substring(1, 3);
+                String min = str.substring(3, 5);
+                switch (dayOf) {
+                    case "1":
+                        dayOf = "MO";
+                    case "2":
+                        dayOf = "TU";
+                    case "5":
+                        dayOf = "FR";
+                }
+                tmp = tmp + ": " + dayOf + ", " + hour + ":" + min;
+                result[count] = tmp;
+                count++;
+            }
+        }
+        PrintWriter pw = null;
+        try {
+            pw = new PrintWriter(parse.name + "RESULTS.txt");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
 
+        Arrays.sort(result);
+        for(String s : result){
+            System.out.println(s);
+            pw.println(s);
+        }
+        pw.close();
     }
 
     public static Fact and_tree(Fact current) {
