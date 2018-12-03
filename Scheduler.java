@@ -169,6 +169,8 @@ class Slot {
 	public int coursemax;
 	public int labmin;
 	public int labmax;
+		public int asscourse;
+	public int asslab;
 	
 	public Slot(int time) {
 		this.time = time;
@@ -177,6 +179,8 @@ class Slot {
 		coursemin = 0;
 		labmax = 0;
 		labmin = 0;
+		asscourse = 0;
+		asslab = 0;
 	}
 	
 	public Slot(Vector<Course> courses, int time) {
@@ -186,24 +190,28 @@ class Slot {
 		coursemin = 0;
 		labmax = 0;
 		labmin = 0;
+		asscourse = 0;
+		asslab = 0;
 	}
 	
-	public Slot(Vector<Course> courses, int time, int cmin, int cmax, int lmin, int lmax) {
+	public Slot(Vector<Course> courses, int time, int cmin, int cmax, int lmin, int lmax, int acor, int alab) {
 		this.time = time;
 		course = courses;
 		coursemax = cmax;
 		coursemin = cmin;
 		labmax = lmax;
 		labmin = lmin;
+		asscourse = acor;
+		asslab = alab;
+		
 	}
 	
 	public boolean addCourse(Course toAdd) {
 		course.add(toAdd);
 		return true;
 	}
-	
 	public Slot copy() {
-		return new Slot((Vector<Course>)this.course.clone(), time, coursemin, coursemax, labmin, labmax);
+		return new Slot((Vector<Course>)this.course.clone(), time, coursemin, coursemax, labmin, labmax, asscourse, asslab);
 	}
 }
 
@@ -249,6 +257,22 @@ class Fact {
 	}
 	
 	public void assign(int slotnum, int coursenum) {
+		if(slots[slotnum].coursemax < slots[slotnum].asscourse + 1) {
+			return;
+		}
+		if(slots[slotnum].labmax < slots[slotnum].asslab + 1 ) {
+			return;
+		}
+		//check all elements of the courses that are assigned then check
+		//if name, number, lecnum equal, then the lab\class cannot be assigned to the same slot
+		for (Course course : slots[slotnum].course) {
+			if(this.unassigned.get(coursenum).name.equals(course.name) && 
+				this.unassigned.get(coursenum).number == course.number &&
+				this.unassigned.get(coursenum).lecture_num == course.lecture_num &&
+				this.unassigned.get(coursenum).is_lecture != course.is_lecture) {
+				return;
+			}
+		}
 		this.slots[slotnum].course.add(this.unassigned.remove(coursenum));
 	}
 	
