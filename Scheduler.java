@@ -274,6 +274,26 @@ class Fact {
 				return;
 			}
 		}
+				//check if any of the course pairs is equal to the course in question
+		//then check the assigned slots to see if they equal the opposite pair
+		
+		for(CoursePair p : parse.pair) {
+			if(p.first.equals(this.unassigned.get(coursenum))) {
+				for(Course c : slots[slotnum].course) {
+					if(slots[slotnum].course.equals(p.second)){
+						return;
+					}
+				}
+			}
+			else if(p.second.equals(this.unassigned.get(coursenum))){
+				for(Course c : slots[slotnum].course) {
+					if(slots[slotnum].course.equals(p.first)) {
+						return;
+					}
+				}
+			}
+			
+		}
 		this.slots[slotnum].course.add(this.unassigned.remove(coursenum));
 	}
 	
