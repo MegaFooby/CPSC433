@@ -301,7 +301,7 @@ class Fact {
 	    }
 	    if(this.unassigned.get(coursenum).number >= 500){
 	      for(Course c : slot[slotnum].course){
-		if(c.number >= 500){
+		if(c.number >= 500 && c.number != this.unassigned.get(coursenum).number){
 		  return;
 		}
 	      }
