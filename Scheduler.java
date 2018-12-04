@@ -366,6 +366,7 @@ class Fact {
     public Slot[] slots = null;
     public int score = 0;
     public Vector<Course> unassigned;
+    public Vector<Course> conflict;
 
     public Fact(Vector<Course> unassigned) {
         this.unassigned = (Vector<Course>)unassigned.clone();
