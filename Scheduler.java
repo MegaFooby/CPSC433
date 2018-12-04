@@ -177,15 +177,25 @@ public class Scheduler {
                 if(g.length() < 2) lecNum = "0" + g;
                 if(c.is_lecture)
                     tmp = tmp + c.name + " " + c.number + " LEC " + lecNum + "             ";
-                if(!c.is_lecture && c.lecture_num == 0) {
+                if(!c.is_lecture && c.lecture_num == 0 && c.tutorial_num > 0) {
                     g = Integer.toString(c.tutorial_num);
                     lecNum = "0" + g;
                     tmp = tmp + c.name + " " + c.number + " TUT " + lecNum + "             ";
                 }
-                if(c.lecture_num != 0 && c.tutorial_num != 0) {
+                if(c.lecture_num != 0 && c.tutorial_num > 0) {
                     String g2 = Integer.toString(c.tutorial_num);
                     String lecNum2 = "0" + g;
                     tmp = tmp + c.name + " " + c.number + " LEC " + lecNum + " TUT " + lecNum2 + "      ";
+                }
+                if(!c.is_lecture && c.lecture_num == 0 && c.tutorial_num < 0) {
+                    g = Integer.toString(c.tutorial_num);
+                    lecNum = "0" + g;
+                    tmp = tmp + c.name + " " + c.number + " LAB " + lecNum + "             ";
+                }
+                if(c.lecture_num != 0 && c.tutorial_num < 0) {
+                    String g2 = Integer.toString(c.tutorial_num);
+                    String lecNum2 = "0" + g;
+                    tmp = tmp + c.name + " " + c.number + " LEC " + lecNum + " LAB " + lecNum2 + "      ";
                 }
                 int time = s.time;
                 String str = Integer.toString(s.time);
