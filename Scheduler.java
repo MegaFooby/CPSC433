@@ -469,7 +469,7 @@ class Fact {
       }
       for(Couse c : this.slots[slotnum].course){
         if(!this.conflict.isEmpty()){
-          for(Course con : conflict){
+          for(Course con : this.conflict){
             if(con.equals(c)){
               return;
             }
@@ -490,7 +490,7 @@ class Fact {
       }
       for(Couse c : slots[slotnum].course){
         if(!this.conflict.isEmpty()){
-          for(Course con : conflict){
+          for(Course con : this.conflict){
             if(con.equals(c)){
               return;
             }
