@@ -190,12 +190,12 @@ public class Scheduler {
                 if(!c.is_lecture && c.lecture_num == 0 && c.tutorial_num < 0) {
                     g = Integer.toString(c.tutorial_num);
                     lecNum = "0" + g;
-                    tmp = tmp + c.name + " " + c.number + " LAB " + lecNum + "             ";
+                    tmp = tmp + c.name + " " + c.number + " LAB " + -lecNum + "             ";
                 }
                 if(c.lecture_num != 0 && c.tutorial_num < 0) {
                     String g2 = Integer.toString(c.tutorial_num);
                     String lecNum2 = "0" + g;
-                    tmp = tmp + c.name + " " + c.number + " LEC " + lecNum + " LAB " + lecNum2 + "      ";
+                    tmp = tmp + c.name + " " + c.number + " LEC " + lecNum + " LAB " + -lecNum2 + "      ";
                 }
                 int time = s.time;
                 String str = Integer.toString(s.time);
