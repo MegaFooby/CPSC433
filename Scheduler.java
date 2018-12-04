@@ -387,6 +387,7 @@ class Fact {
 
 
     public void constr(int slotnum, int coursenum, Parser parse){
+        this.conflict.clear();
         /*if(this.slots[slotnum].coursemax < this.slots[slotnum].asscourse + 1) {
             return;
         }
@@ -453,8 +454,51 @@ class Fact {
                 else if(this.slots[slotnum].time < 21800 && this.slots[slotnum].time > 20000) return;
                 else if(this.slots[slotnum].time < 11800 && this.slots[slotnum].time > 10000) return;
             }
-            if(this.unassigned.get(coursenum).lecture_num == 813){
+    if(this.unassigned.get(coursenum).lecture_num == 813 &&this.unassigned.get(coursenum).is_lecture && this.slots[slotnum].time != 21800) return;
+    if(this.unassigned.get(coursenum).lecture_num == 813 && this.unassigned.get(coursenum).is_lecture && this.slots[slotnum].time != 21800) return;
+    if(this.unassigned.get(coursenum).lecture_num == 813 && !this.unassigned.get(coursenum).is_lecture){
+      //traverse not compatible vector to see for any conflicts.
+      for(CousePair cp : parse.not_compatible){
+        if(cp.first.name.equals("CPSC") && cp.first.number == 313) {
+          this.conflict.add(cp.second);
+        }
+        if(cp.second.name.equals("CPSC") && cp.second.number == 313) {
+          this.conlflict.add(cp.first);
+        }
+      }
+      for(Couse c : this.slots[slotnum].course){
+        if(!this.conflict.isEmpty()){
+          for(Course con : conflict){
+            if(con.equals(c)){
+              return;
             }
+          }
+        }
+        if(c.name.equals("CPSC") && c.number == 313) return;
+      }
+    }
+    if(this.unassigned.get(coursenum).lecture_num == 913 && !this.unassigned.get(coursenum).is_lecture){
+      //traverse not compatible vector to see for any conflicts.
+      for(CousePair cp : parse.not_compatible){
+        if(cp.first.name.equals("CPSC") && cp.first.number == 413) {
+          this.conflict.add(cp.second);
+        }
+        if(cp.second.name.equals("CPSC") && cp.second.number == 413) {
+          this.conlflict.add(cp.first);
+        }
+      }
+      for(Couse c : slots[slotnum].course){
+        if(!this.conflict.isEmpty()){
+          for(Course con : conflict){
+            if(con.equals(c)){
+              return;
+            }
+          }
+        }
+        if(c.name.equals("CPSC") && c.number == 413) return;
+      }
+    }
+    }
         }
         this.slots[slotnum].course.add(this.unassigned.get(coursenum));
         this.unassigned.remove(this.unassigned.get(coursenum));
