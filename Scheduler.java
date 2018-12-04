@@ -16,6 +16,11 @@ public class Scheduler {
     public static int pen_coursemin = 1;
     public static int pen_labmin = 1;
     public static int pen_notpaired = 1;
+    public static int pen_secdiff = 1;
+    public static int w_minfilled = 1;
+    public static int w_pref = 1;
+    public static int w_pair = 1;
+    public static int w_secdiff = 1;
 
     /*public static final int lectime_collisions[][] = {
         //monday
@@ -111,6 +116,14 @@ public class Scheduler {
         options.addOption(plm);
         Option pnp = new Option("pnp", "pairpen", true, "Not pair penalty");
         options.addOption(pnp);
+        Option wmf = new Option("wmf", "minweight", true, "Weight of min fill");
+        options.addOption(wmf);
+        Option wpf = new Option("wpf", "prefweight", true, "Weight of preference");
+        options.addOption(wpf);
+        Option wpa = new Option("wpa", "pairweight", true, "Weight of pairs");
+        options.addOption(wpa);
+        Option wsd = new Option("wsd", "secweight", true, "Weight of secdiff");
+        options.addOption(wsd);
         Option debugo = new Option("d", "debug", false, "DEBUG mode on");
         options.addOption(debugo);
 
@@ -372,11 +385,6 @@ class Fact {
         return tmp;
     }
 
-    public void assign(int slotnum, int coursenum, Parser parse) {
-        this.constr(slotnum, coursenum, parse);
-
-    }
-
 
     public void constr(int slotnum, int coursenum, Parser parse){
         /*if(this.slots[slotnum].coursemax < this.slots[slotnum].asscourse + 1) {
@@ -452,9 +460,7 @@ class Fact {
         this.unassigned.remove(this.unassigned.get(coursenum));
     }
 
-    public void evaluate(int slot, Parser parse) {
-        this.constr(slot, this.unassigned.size()-1, parse);
-        //if there are too many courses in the slot
+    public int eval_minfilled(int slot){
         int cnum = 0, lnum = 0;
         for(int i = 0; i < this.slots[slot].course.size(); i++) {
             if(this.slots[slot].course.get(i).is_lecture) {
@@ -468,24 +474,24 @@ class Fact {
         if(this.slots[slot].coursemax != 0 & this.slots[slot].coursemin != 0) lecFlag = true;
         if(this.slots[slot].labmax != 0 & this.slots[slot].labmin != 0) labFlag = true;
         if(this.slots[slot].coursemax < cnum & lecFlag) {
-            this.score = Integer.MIN_VALUE;
-            return;
+            return Integer.MIN_VALUE;
+
         }
         if(this.slots[slot].labmax < lnum & labFlag) {
-            this.score = Integer.MIN_VALUE;
-            return;
+            return Integer.MIN_VALUE;
         }
-        int score = 0;
         for(Slot s : this.slots){
             if(s.course.size() == 0) break;
             int min = s.coursemin;
             int leccount = cnum;
             int labcount = lnum;
-            if(s.coursemin > leccount) score -= Scheduler.pen_coursemin;
-            if(s.labmin > labcount) score -= Scheduler.pen_labmin;
+            if(s.coursemin > leccount) score += Scheduler.pen_coursemin;
+            if(s.labmin > labcount) score += Scheduler.pen_labmin;
 
         }
-
+        return score;
+    }
+    public int eval_pref(Parser parse){
         int nonpref = 0;
         for(Slot s : this.slots){
             for(Preference p : parse.preferences){
@@ -496,66 +502,54 @@ class Fact {
                 }
             }
         }
-        score -= nonpref;
-
+        return nonpref;
+    }
+    public int eval_pair(Parser parse){
+        int score = 0;
         for(CoursePair cp : parse.pair){
             for(Slot s : this.slots){
                 if(s.course.contains(cp.first) && !(s.course.contains(cp.second))){
-                    score -= Scheduler.pen_notpaired;
+                    score += Scheduler.pen_notpaired;
                 }
                 if(s.course.contains(cp.second) && !(s.course.contains(cp.first))){
-                    score -= Scheduler.pen_notpaired;
+                    score += Scheduler.pen_notpaired;
                 }
             }
         }
-        this.score = score;
-
-    }
-
-    public int eval(Fact fact, int slotnum, int coursenum, Parser parse){
-        int score = 0;
-        for(Slot s : fact.slots){
-            int min = s.coursemin;
-            int leccount = 0;
-            int labcount = 0;
-            for(Course c : s.course){
-                if(c.is_lecture) leccount += 1;
-                else labcount += 1;
-            }
-            if(s.coursemin > leccount) score -= Scheduler.pen_coursemin;
-            else score += Scheduler.pen_coursemin;
-            if(s.labmin > labcount) score -= Scheduler.pen_labmin;
-            else score += Scheduler.pen_labmin;
-
-        }
-
-        int nonpref = 0;
-        for(Slot s : fact.slots){
-            for(Preference p : parse.preferences){
-                for(Course c : s.course){
-                    if (c.equals(p.course) && s.time != p.time){
-                        nonpref += p.value;
-                    }
-                }
-            }
-        }
-        score -= nonpref;
-
-        for(CoursePair cp : parse.pair){
-            for(Slot s : fact.slots){
-                if(s.course.contains(cp.first) && !(s.course.contains(cp.second))){
-                    score -= Scheduler.pen_notpaired;
-                }
-                else score += Scheduler.pen_notpaired;
-                if(s.course.contains(cp.second) && !(s.course.contains(cp.first))){
-                    score -= Scheduler.pen_notpaired;
-                }
-                else score += Scheduler.pen_notpaired;
-            }
-        }
-        fact.score = score;
         return score;
     }
+    public int eval_secdiff(Parser parse){
+        int score = 0;
+        int[] checked = new int[parse.courses.size()];
+        int i = 0;
+        for(Course c : parse.courses){
+            for(Course k : parse.courses){
+                boolean notin = false;
+                for(int j : checked){
+                    if(c.number == j){
+                        notin = true;
+                        break;
+                    }
+                }
+                if(c.number == k.number & c.lecture_num != k.lecture_num && notin){
+                    score += Scheduler.pen_secdiff;
+                    checked[i] = c.number;
+                }
+            }
+            i++;
+        }
+        return score;
+    }
+
+    public void evaluate(int slot, Parser parse) {
+        this.constr(slot, this.unassigned.size()-1, parse);
+        int score = 0;
+        score = (this.eval_minfilled(slot) * Scheduler.w_minfilled) + (this.eval_pref(parse) * Scheduler.w_pref) + (this.eval_pair(parse) *
+                Scheduler.w_pair) + (this.eval_secdiff(parse) * Scheduler.w_secdiff);
+        //if there are too many courses in the slot
+
+    }
+
     //try to use the other one because this is slow
     public boolean assign(int time, Course course) {
         int slotnum, coursenum;
