@@ -387,7 +387,7 @@ class Fact {
     }
 
 
-    public void constr(int slotnum, int coursenum, Parser parse){
+    public boolean constr(int slotnum, int coursenum, Parser parse){
         this.conflict.clear();
         /*if(this.slots[slotnum].coursemax < this.slots[slotnum].asscourse + 1) {
             return;
@@ -402,7 +402,7 @@ class Fact {
                     this.unassigned.get(coursenum).number == course.number &&
                     this.unassigned.get(coursenum).lecture_num == course.lecture_num &&
                     this.unassigned.get(coursenum).is_lecture != course.is_lecture) {
-                return;
+                return false;
             }
         }
         //check if any of the course pairs is equal to the course in question
@@ -412,14 +412,14 @@ class Fact {
             if(p.first.equals(this.unassigned.get(coursenum))) {
                 for(Course c : this.slots[slotnum].course) {
                     if(this.slots[slotnum].course.equals(p.second)){
-                        return;
+                        return false;
                     }
                 }
             }
             else if(p.second.equals(this.unassigned.get(coursenum))){
                 for(Course c : this.slots[slotnum].course) {
                     if(this.slots[slotnum].course.equals(p.first)) {
-                        return;
+                        return false;
                     }
                 }
             }
@@ -427,13 +427,13 @@ class Fact {
         }
         //traverses through the unwatned vector and compares the slot time to each CourseTime time and then compares the course to see if they are equal
         for(CourseTime c : parse.unwanted){
-            if(c.time == slots[slotnum].time && c.course.equals(this.unassigned.get(coursenum))) return;
+            if(c.time == slots[slotnum].time && c.course.equals(this.unassigned.get(coursenum))) return false;
 
         }
         if(this.unassigned.get(coursenum).number >= 500){
             for(Course c : this.slots[slotnum].course){
                 if(c.number >= 500 && c.number != this.unassigned.get(coursenum).number){
-                    return;
+                    return false;
                 }
             }
         }
@@ -448,15 +448,15 @@ class Fact {
         }
         //departmental contraints
         if(this.unassigned.get(coursenum).name.equals("CPSC")){
-            if(this.unassigned.get(coursenum).is_lecture && this.slots[slotnum].time == 21130) return;
+            if(this.unassigned.get(coursenum).is_lecture && this.slots[slotnum].time == 21130) return false;
 
             if(this.unassigned.get(coursenum).lecture_num == 9){
-                if(this.slots[slotnum].time < 51800 && this.slots[slotnum].time > 50000) return;
-                else if(this.slots[slotnum].time < 21800 && this.slots[slotnum].time > 20000) return;
-                else if(this.slots[slotnum].time < 11800 && this.slots[slotnum].time > 10000) return;
+                if(this.slots[slotnum].time < 51800 && this.slots[slotnum].time > 50000) return false;
+                else if(this.slots[slotnum].time < 21800 && this.slots[slotnum].time > 20000) return false;
+                else if(this.slots[slotnum].time < 11800 && this.slots[slotnum].time > 10000) return false;
             }
-    if(this.unassigned.get(coursenum).lecture_num == 813 &&this.unassigned.get(coursenum).is_lecture && this.slots[slotnum].time != 21800) return;
-    if(this.unassigned.get(coursenum).lecture_num == 813 && this.unassigned.get(coursenum).is_lecture && this.slots[slotnum].time != 21800) return;
+    if(this.unassigned.get(coursenum).lecture_num == 813 &&this.unassigned.get(coursenum).is_lecture && this.slots[slotnum].time != 21800) return false;
+    if(this.unassigned.get(coursenum).lecture_num == 813 && this.unassigned.get(coursenum).is_lecture && this.slots[slotnum].time != 21800) return false;
     if(this.unassigned.get(coursenum).lecture_num == 813 && !this.unassigned.get(coursenum).is_lecture){
       //traverse not compatible vector to see for any conflicts.
       for(CousePair cp : parse.not_compatible){
@@ -471,7 +471,7 @@ class Fact {
         if(!this.conflict.isEmpty()){
           for(Course con : this.conflict){
             if(con.equals(c)){
-              return;
+              return false;
             }
           }
         }
@@ -492,17 +492,18 @@ class Fact {
         if(!this.conflict.isEmpty()){
           for(Course con : this.conflict){
             if(con.equals(c)){
-              return;
+              return false;
             }
           }
         }
-        if(c.name.equals("CPSC") && c.number == 413) return;
+        if(c.name.equals("CPSC") && c.number == 413) return false;
       }
     }
     }
         }
         this.slots[slotnum].course.add(this.unassigned.get(coursenum));
         this.unassigned.remove(this.unassigned.get(coursenum));
+        return true;
     }
 
     public int eval_minfilled(int slot){
