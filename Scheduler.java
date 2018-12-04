@@ -149,20 +149,31 @@ public class Scheduler {
         //parse input file
         Fact solution = and_tree(foo, parse);
         //print or save solution
+
         System.out.println("Eval Value: " + solution.score);
         Slot[] sols = solution.slots;
         String[] result = new String[parse.courses.size()];
         int count = 0;
+        Integer[] num = {0,1,2,3,4,5,6,7,8,9};
         for(Slot s : sols){
             if(s.course.size() == 0) continue;
-            String tmp = "";
             for (Course c : s.course) {
+                String tmp = "";
+                String g = Integer.toString(c.lecture_num);
+                String lecNum = "";
+                if(g.length() < 2) lecNum = "0" + g;
                 if(c.is_lecture)
-                    tmp = tmp + c.name + " LEC " + c.lecture_num + "      ";
-                if(!c.is_lecture && c.lecture_num == 0)
-                    tmp = tmp + c.name + " TUT " + c.tutorial_num + "      ";
-                if(c.lecture_num != 0 && c.tutorial_num != 0)
-                    tmp = tmp + c.name + " LEC " + c.lecture_num + " TUT " + c.tutorial_num + "      ";
+                    tmp = tmp + c.name + " " + c.number + " LEC " + lecNum + "             ";
+                if(!c.is_lecture && c.lecture_num == 0) {
+                    g = Integer.toString(c.tutorial_num);
+                    lecNum = "0" + g;
+                    tmp = tmp + c.name + " " + c.number + " TUT " + lecNum + "             ";
+                }
+                if(c.lecture_num != 0 && c.tutorial_num != 0) {
+                    String g2 = Integer.toString(c.tutorial_num);
+                    String lecNum2 = "0" + g;
+                    tmp = tmp + c.name + " " + c.number + " LEC " + lecNum + " TUT " + lecNum2 + "      ";
+                }
                 int time = s.time;
                 String str = Integer.toString(s.time);
                 String dayOf = str.substring(0, 1);
@@ -177,6 +188,7 @@ public class Scheduler {
                         dayOf = "FR";
                 }
                 tmp = tmp + ": " + dayOf + ", " + hour + ":" + min;
+
                 result[count] = tmp;
                 count++;
             }
@@ -190,7 +202,7 @@ public class Scheduler {
         int nullcount = 0;
         for(String s : result){
             if(s == null){
-                 nullcount++;
+                nullcount++;
             }
         }
         String[] result2 = new String[parse.courses.size() - nullcount];
@@ -217,13 +229,12 @@ public class Scheduler {
         }
         //find all possible combinations for adding 1 course
         Vector<Fact> possible = new Vector();
+        Fact tmp_cur = current.copy();
         for(int i = 0; i < current.slots.length; i++) {
             //copy so we don't alter the current values
-            Fact tmp_cur = current.copy();
             //tmp_cur.assign(i, 0);
             //Fact tmp = and_tree(tmp_cur);
             evaluate(tmp_cur, i, parse);
-
             if (tmp_cur.score > best) {//don't add if null or worse
                 possible.add(tmp_cur);
             }
@@ -231,9 +242,12 @@ public class Scheduler {
         //evaluate and find the best
         //need to change this so it doesn't create and evaluate every single possibility
         Fact solution = null;
-        int best = 0;
+
+        int best = Integer.MIN_VALUE;
+        int least_unass = current.unassigned.size();
         for(int i = 0; i < possible.size(); i++) {
-            if(possible.get(i).score > best) {
+            if(possible.get(i).score > best & possible.get(i).unassigned.size() < least_unass) {
+                least_unass = possible.get(i).unassigned.size();
                 solution = possible.get(i);
                 best = possible.get(i).score;
             }
@@ -244,7 +258,66 @@ public class Scheduler {
     //evaluate all hard constraint violations to Integer.MIN_VALUE
     //Also just evaluate with respect to the current class in the current slot
     public static void evaluate(Fact current, int slot, Parser parse) {
-        current.assign(current, slot, current.unassigned.size()-1, parse);
+        current.assign(current, slot, current.unassigned.size()-1-slot, parse);
+        //if there are too many courses in the slot
+        int cnum = 0, lnum = 0;
+        for(int i = 0; i < current.slots[slot].course.size(); i++) {
+            if(current.slots[slot].course.get(i).is_lecture) {
+                cnum++;
+            } else {
+                lnum++;
+            }
+        }
+        boolean lecFlag = false;
+        boolean labFlag = false;
+        if(current.slots[slot].coursemax != 0 & current.slots[slot].coursemin != 0) lecFlag = true;
+        if(current.slots[slot].labmax != 0 & current.slots[slot].labmin != 0) labFlag = true;
+        if(current.slots[slot].coursemax < cnum & lecFlag) {
+            current.score = Integer.MIN_VALUE;
+            return;
+        }
+        if(current.slots[slot].labmax < lnum & labFlag) {
+            current.score = Integer.MIN_VALUE;
+            return;
+        }
+        int score = 0;
+        for(Slot s : current.slots){
+            int min = s.coursemin;
+            int leccount = 0;
+            int labcount = 0;
+            for(Course c : s.course){
+                if(c.is_lecture) leccount += 1;
+                else labcount += 1;
+            }
+            if(s.coursemin > leccount) score -= Scheduler.pen_coursemin;
+            if(s.labmin > labcount) score -= Scheduler.pen_labmin;
+
+        }
+
+        int nonpref = 0;
+        for(Slot s : current.slots){
+            for(Preference p : parse.preferences){
+                for(Course c : s.course){
+                    if (c.equals(p.course) && s.time != p.time){
+                        nonpref += p.value;
+                    }
+                }
+            }
+        }
+        score -= nonpref;
+
+        for(CoursePair cp : parse.pair){
+            for(Slot s : current.slots){
+                if(s.course.contains(cp.first) && !(s.course.contains(cp.second))){
+                    score -= Scheduler.pen_notpaired;
+                }
+                if(s.course.contains(cp.second) && !(s.course.contains(cp.first))){
+                    score -= Scheduler.pen_notpaired;
+                }
+            }
+        }
+        current.score = score;
+
     }
 }
 
@@ -258,47 +331,47 @@ class Slot {
     public int asscourse;
     public int asslab;
 
-	public Slot(int time) {
-            this.time = time;
-            course = new Vector();
-            coursemax = 0;
-            coursemin = 0;
-            labmax = 0;
-            labmin = 0;
-            asscourse = 0;
-            asslab = 0;
-        }
+    public Slot(int time) {
+        this.time = time;
+        course = new Vector();
+        coursemax = 0;
+        coursemin = 0;
+        labmax = 0;
+        labmin = 0;
+        asscourse = 0;
+        asslab = 0;
+    }
 
-	public Slot(Vector<Course> courses, int time) {
-            this.time = time;
-            course = courses;
-            coursemax = 0;
-            coursemin = 0;
-            labmax = 0;
-            labmin = 0;
-            asscourse = 0;
-            asslab = 0;
-        }
+    public Slot(Vector<Course> courses, int time) {
+        this.time = time;
+        course = courses;
+        coursemax = 0;
+        coursemin = 0;
+        labmax = 0;
+        labmin = 0;
+        asscourse = 0;
+        asslab = 0;
+    }
 
-	public Slot(Vector<Course> courses, int time, int cmin, int cmax, int lmin, int lmax, int acor, int alab) {
-            this.time = time;
-            course = courses;
-            coursemax = cmax;
-            coursemin = cmin;
-            labmax = lmax;
-            labmin = lmin;
-            asscourse = acor;
-            asslab = alab;
+    public Slot(Vector<Course> courses, int time, int cmin, int cmax, int lmin, int lmax, int acor, int alab) {
+        this.time = time;
+        course = courses;
+        coursemax = cmax;
+        coursemin = cmin;
+        labmax = lmax;
+        labmin = lmin;
+        asscourse = acor;
+        asslab = alab;
 
-        }
+    }
 
-        public boolean addCourse(Course toAdd) {
-            course.add(toAdd);
-            return true;
-        }
-        public Slot copy() {
-            return new Slot((Vector<Course>)this.course.clone(), time, coursemin, coursemax, labmin, labmax, asscourse, asslab);
-        }
+    public boolean addCourse(Course toAdd) {
+        course.add(toAdd);
+        return true;
+    }
+    public Slot copy() {
+        return new Slot((Vector<Course>)this.course.clone(), time, coursemin, coursemax, labmin, labmax, asscourse, asslab);
+    }
 }
 
 class Course {
@@ -356,88 +429,83 @@ class Fact {
     }
 
     public void assign(Fact fact, int slotnum, int coursenum, Parser parse) {
-        boolean con = constr(fact, slotnum, coursenum, parse);
-        int ev = eval(fact, slotnum, coursenum, parse);
-        if(con && ev > fact.score){
-            if(ev != Integer.MIN_VALUE)
-                this.slots[slotnum].course.add(this.unassigned.remove(coursenum));
-        }
+        constr(fact, slotnum, coursenum, parse);
 
     }
 
 
-    public boolean constr(Fact fact, int slotnum, int coursenum, Parser parse){
-        if(this.slots[slotnum].coursemax < this.slots[slotnum].asscourse + 1) {
-            return false;
+    public void constr(Fact fact, int slotnum, int coursenum, Parser parse){
+        if(fact.slots[slotnum].coursemax < fact.slots[slotnum].asscourse + 1) {
+            return;
         }
-        if(this.slots[slotnum].labmax < this.slots[slotnum].asslab + 1 ) {
-            return false;
+        if(fact.slots[slotnum].labmax < fact.slots[slotnum].asslab + 1 ) {
+            return;
         }
         //check all elements of the courses that are assigned then check
         //if name, number, lecnum equal, then the lab\class cannot be assigned to the same slot
-        for (Course course : slots[slotnum].course) {
-            if(this.unassigned.get(coursenum).name.equals(course.name) &&
-                    this.unassigned.get(coursenum).number == course.number &&
-                    this.unassigned.get(coursenum).lecture_num == course.lecture_num &&
-                    this.unassigned.get(coursenum).is_lecture != course.is_lecture) {
-                return false;
+        for (Course course : fact.slots[slotnum].course) {
+            if(fact.unassigned.get(coursenum).name.equals(course.name) &&
+                    fact.unassigned.get(coursenum).number == course.number &&
+                    fact.unassigned.get(coursenum).lecture_num == course.lecture_num &&
+                    fact.unassigned.get(coursenum).is_lecture != course.is_lecture) {
+                return;
             }
         }
         //check if any of the course pairs is equal to the course in question
         //then check the assigned slots to see if they equal the opposite pair
+
         for(CoursePair p : parse.pair) {
-            if(p.first.equals(this.unassigned.get(coursenum))) {
-                for(Course c : this.slots[slotnum].course) {
-                    if(this.slots[slotnum].course.equals(p.second)){
-                        return false;
+            if(p.first.equals(fact.unassigned.get(coursenum))) {
+                for(Course c : fact.slots[slotnum].course) {
+                    if(fact.slots[slotnum].course.equals(p.second)){
+                        return;
                     }
                 }
             }
-            else if(p.second.equals(this.unassigned.get(coursenum))){
-                for(Course c : this.slots[slotnum].course) {
-                    if(this.slots[slotnum].course.equals(p.first)) {
-                        return false;
+            else if(p.second.equals(fact.unassigned.get(coursenum))){
+                for(Course c : fact.slots[slotnum].course) {
+                    if(fact.slots[slotnum].course.equals(p.first)) {
+                        return;
                     }
                 }
             }
 
         }
-        //Checks list of not compatibles to make sure they arent in the assignment together.
-        for(CoursePair p : parse.not_compatible){
-            if(p.first.equals(this.unassigned.get(coursenum))){
-                for(Course c : this.slots[slotnum].course){
-                    if(this.slots[slotnum].course.equals(p.second)) return false;
-                }
-            }
-            else if(p.second.equals(this.unassigned.get(coursenum))){
-                for(Course c : this.slots[slotnum].course) {
-                    if(this.slots[slotnum].course.equals(p.first)) {
-                        return false;
-                    }
-                }
-            }
-        }
-        //Makes sure that all partials are correct in the assignment
-        if(parse.partial.size() != 0){
-            for(CourseTime ct : parse.partial){
-                for(Course c : this.slots[slotnum].course){
-                    if(!ct.course.equals(c) && !(ct.time == this.slots[slotnum].time)){
-                        return false;
-                    }
-                }
-            }
-        }
-        //Unwanted
-        for(CourseTime ct : parse.unwanted){
-            for(Course c : this.slots[slotnum].course){
-                if(ct.course.equals(c) && ct.time == this.slots[slotnum].time){
-                    return false;
-                }
-            }
-        }
-        //department constraints
+        //traverses through the unwatned vector and compares the slot time to each CourseTime time and then compares the course to see if they are equal
+        for(CourseTime c : parse.unwanted){
+            if(c.time == slots[slotnum].time && c.course.equals(fact.unassigned.get(coursenum))) return;
 
-        return true;
+        }
+        if(fact.unassigned.get(coursenum).number >= 500){
+            for(Course c : fact.slots[slotnum].course){
+                if(c.number >= 500 && c.number != fact.unassigned.get(coursenum).number){
+                    return;
+                }
+            }
+        }
+        int fri_slotnum = 0;
+        /*
+        if(this.unassigned.get(coursenum).is_lecture){
+            if(this.unassigned.get(coursenum).time <= 12000){
+                fri_slotnum = this.unassigned.get(coursenum).time + 40000;
+                //TODO: add into friday time slot at end
+                //friday time slot is 0 if none of the above conditions are true
+            }
+        }*/
+        //departmental contraints
+        if(fact.unassigned.get(coursenum).name.equals("CPSC")){
+            if(fact.unassigned.get(coursenum).is_lecture && fact.slots[slotnum].time == 21130) return;
+
+            if(fact.unassigned.get(coursenum).lecture_num == 9){
+                if(fact.slots[slotnum].time < 51800 && fact.slots[slotnum].time > 50000) return;
+                else if(fact.slots[slotnum].time < 21800 && fact.slots[slotnum].time > 20000) return;
+                else if(fact.slots[slotnum].time < 11800 && fact.slots[slotnum].time > 10000) return;
+            }
+            if(fact.unassigned.get(coursenum).lecture_num == 813){
+            }
+        }
+        fact.slots[slotnum].course.add(fact.unassigned.get(coursenum));
+        fact.unassigned.remove(fact.unassigned.get(coursenum));
     }
 
     public int eval(Fact fact, int slotnum, int coursenum, Parser parse){
