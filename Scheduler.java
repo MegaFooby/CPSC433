@@ -278,7 +278,7 @@ class Fact {
 				//check if any of the course pairs is equal to the course in question
 		//then check the assigned slots to see if they equal the opposite pair
 		
-		for(CoursePair p : parse.pair) {
+		for(CoursePair p : parse.not_compatible) {
 			if(p.first.equals(this.unassigned.get(coursenum))) {
 				for(Course c : slots[slotnum].course) {
 					if(slots[slotnum].course.equals(p.second)){
