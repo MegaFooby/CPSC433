@@ -398,7 +398,8 @@ class Fact {
 
 
     public boolean constr(int slotnum, int coursenum, Parser parse){
-        this.conflict.clear();
+        if (this.conflict != null)
+            this.conflict.clear();
         /*if(this.slots[slotnum].coursemax < this.slots[slotnum].asscourse + 1) {
             return;
         }
