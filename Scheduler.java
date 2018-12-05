@@ -1,3 +1,5 @@
+package org.apache.commons.cli;
+
 import javafx.scene.layout.CornerRadii;
 import org.apache.commons.cli.*;
 
@@ -190,12 +192,12 @@ public class Scheduler {
                 if(!c.is_lecture && c.lecture_num == 0 && c.tutorial_num < 0) {
                     g = Integer.toString(c.tutorial_num);
                     lecNum = "0" + g;
-                    tmp = tmp + c.name + " " + c.number + " LAB " + -lecNum + "             ";
+                    tmp = tmp + c.name + " " + c.number + " LAB " + lecNum + "             ";
                 }
                 if(c.lecture_num != 0 && c.tutorial_num < 0) {
                     String g2 = Integer.toString(c.tutorial_num);
                     String lecNum2 = "0" + g;
-                    tmp = tmp + c.name + " " + c.number + " LEC " + lecNum + " LAB " + -lecNum2 + "      ";
+                    tmp = tmp + c.name + " " + c.number + " LEC " + lecNum + " LAB " + lecNum2 + "      ";
                 }
                 int time = s.time;
                 String str = Integer.toString(s.time);
@@ -466,52 +468,52 @@ class Fact {
                 else if(this.slots[slotnum].time < 21800 && this.slots[slotnum].time > 20000) return false;
                 else if(this.slots[slotnum].time < 11800 && this.slots[slotnum].time > 10000) return false;
             }
-    if(this.unassigned.get(coursenum).lecture_num == 813 &&this.unassigned.get(coursenum).is_lecture && this.slots[slotnum].time != 21800) return false;
-    if(this.unassigned.get(coursenum).lecture_num == 813 && this.unassigned.get(coursenum).is_lecture && this.slots[slotnum].time != 21800) return false;
-    if(this.unassigned.get(coursenum).lecture_num == 813 && !this.unassigned.get(coursenum).is_lecture){
-      //traverse not compatible vector to see for any conflicts.
-      for(CousePair cp : parse.not_compatible){
-        if(cp.first.name.equals("CPSC") && cp.first.number == 313) {
-          this.conflict.add(cp.second);
+	        if(this.unassigned.get(coursenum).lecture_num == 813 &&this.unassigned.get(coursenum).is_lecture && this.slots[slotnum].time != 21800) return false;
+	        if(this.unassigned.get(coursenum).lecture_num == 813 && this.unassigned.get(coursenum).is_lecture && this.slots[slotnum].time != 21800) return false;
+	        if(this.unassigned.get(coursenum).lecture_num == 813 && !this.unassigned.get(coursenum).is_lecture){
+	        //traverse not compatible vector to see for any conflicts.
+		        for(CoursePair cp : parse.not_compatible){
+		            if(cp.first.name.equals("CPSC") && cp.first.number == 313) {
+		              this.conflict.add(cp.second);
+		            }
+		            if(cp.second.name.equals("CPSC") && cp.second.number == 313) {
+		              this.conflict.add(cp.first);
+		            }
+		        }
+		        for(Course c : this.slots[slotnum].course){
+		            if(!this.conflict.isEmpty()){
+		              for(Course con : this.conflict){
+		                if(con.equals(c)){
+		                  return false;
+		                }
+		              }
+		            }
+		            if(c.name.equals("CPSC") && c.number == 313) return false;
+		        }
+	        }
+	        if(this.unassigned.get(coursenum).lecture_num == 913 && !this.unassigned.get(coursenum).is_lecture){
+	        //traverse not compatible vector to see for any conflicts.
+	            for(CoursePair cp : parse.not_compatible){
+	                if(cp.first.name.equals("CPSC") && cp.first.number == 413) {
+	                    this.conflict.add(cp.second);
+	                }
+	                if(cp.second.name.equals("CPSC") && cp.second.number == 413) {
+	                    this.conflict.add(cp.first);
+	                }
+	            }
+	            for(Course c : slots[slotnum].course){
+	                if(!this.conflict.isEmpty()){
+	                    for(Course con : this.conflict){
+	                        if(con.equals(c)){
+	                            return false;
+	                        }
+	                    }
+	                }
+	                if(c.name.equals("CPSC") && c.number == 413) return false;
+	            }
+	        }
         }
-        if(cp.second.name.equals("CPSC") && cp.second.number == 313) {
-          this.conlflict.add(cp.first);
-        }
-      }
-      for(Couse c : this.slots[slotnum].course){
-        if(!this.conflict.isEmpty()){
-          for(Course con : this.conflict){
-            if(con.equals(c)){
-              return false;
-            }
-          }
-        }
-        if(c.name.equals("CPSC") && c.number == 313) return;
-      }
-    }
-    if(this.unassigned.get(coursenum).lecture_num == 913 && !this.unassigned.get(coursenum).is_lecture){
-      //traverse not compatible vector to see for any conflicts.
-      for(CousePair cp : parse.not_compatible){
-        if(cp.first.name.equals("CPSC") && cp.first.number == 413) {
-          this.conflict.add(cp.second);
-        }
-        if(cp.second.name.equals("CPSC") && cp.second.number == 413) {
-          this.conlflict.add(cp.first);
-        }
-      }
-      for(Couse c : slots[slotnum].course){
-        if(!this.conflict.isEmpty()){
-          for(Course con : this.conflict){
-            if(con.equals(c)){
-              return false;
-            }
-          }
-        }
-        if(c.name.equals("CPSC") && c.number == 413) return false;
-      }
-    }
-    }
-        }
+        
         this.slots[slotnum].course.add(this.unassigned.get(coursenum));
         this.unassigned.remove(this.unassigned.get(coursenum));
         return true;
