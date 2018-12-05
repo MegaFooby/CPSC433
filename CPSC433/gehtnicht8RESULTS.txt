@@ -1,0 +1,5 @@
+CPSC 533 LEC 01             : MO, 08:00
+CPSC 533 LEC 01 TUT 01      : MO, 08:00
+CPSC 534 LEC 01             : TU, 14:00
+CPSC 535 LEC 01             : TU, 08:00
+CPSC 536 LEC 01             : MO, 09:00

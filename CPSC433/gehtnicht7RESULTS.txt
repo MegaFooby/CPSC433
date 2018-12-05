@@ -1,0 +1,5 @@
+CPSC 433 LEC 01             : TU, 14:00
+CPSC 433 LEC 01 TUT 01      : MO, 08:00
+CPSC 434 LEC 01             : TU, 08:00
+CPSC 435 LEC 01             : MO, 09:00
+CPSC 910 LEC              : MO, 08:00
