@@ -1,5 +1,3 @@
-import javafx.scene.layout.CornerRadii;
-import javafx.util.Pair;
 import org.apache.commons.cli.*;
 
 import java.io.FileNotFoundException;
@@ -66,7 +64,7 @@ public class Main {
             System.out.println("Usage: java Main filename [-arguments] [-options]");
             System.exit(0);
         }
-        Parser parse = new Parser(args[0]);
+        ParserJ parse = new ParserJ(args[0]);
         Fact init = new Fact(parse.courseSlotList, parse.labsSlotList, parse.courses, parse.labs);
         for(Partial p : parse.partials){
             if(p.getTutSec() == -1){
@@ -309,7 +307,7 @@ public class Main {
 
         return true;
     }
-    public static boolean unwanted(Course c, CourseSlot cs, Parser p){
+    public static boolean unwanted(Course c, CourseSlot cs, ParserJ p){
         boolean result = true;
         for(Unwanted u : p.unwanted){
             Course cu = new Course(u.getFaculty(),u.getCourseNum(),u.getLecSec());
@@ -320,7 +318,7 @@ public class Main {
         }
         return result;
     }
-    public static boolean isCompat(Course c, CourseSlot cs, Parser p){
+    public static boolean isCompat(Course c, CourseSlot cs, ParserJ p){
         boolean result = true;
         for(Course k : cs.courses){
             NotComp nc = new NotComp(c.getFaculty(),k.getFaculty(),c.getCourseNum(),k.getCourseNum(),c.getLecSec(),k.getLecSec(),0,0);
@@ -329,7 +327,7 @@ public class Main {
         return result;
     }
 
-    public static boolean isPref(Course c, CourseSlot cs, Parser p){
+    public static boolean isPref(Course c, CourseSlot cs, ParserJ p){
         boolean result = false;
         List<Preference> lp = new ArrayList<>();
         for(Preference pref : p.preferences){
@@ -349,7 +347,7 @@ public class Main {
         return result;
     }
 
-    public static void hasPair(Course c, CourseSlot cl, Parser p, Fact f){
+    public static void hasPair(Course c, CourseSlot cl, ParserJ p, Fact f){
         for(APair pair : p.pairs){
             if(pair.getTutSec1() != -1 && pair.getTutSec2() != -1) continue;
             if(pair.getFaculty1().equals(c.getFaculty()) && pair.getCourseNum1() == c.getCourseNum() &&
@@ -387,7 +385,7 @@ public class Main {
         }
     }
     //Could make list of facts as solutions
-    public static Fact tree_course(Fact f, Parser p, List<Fact> o){
+    public static Fact tree_course(Fact f, ParserJ p, List<Fact> o){
         if(f.unassCourse.size() == 0){
             o.add(f);
             return f;
@@ -420,7 +418,7 @@ public class Main {
         return f;
     }
 
-    public static List<Fact> assign(Fact f, Parser p) {
+    public static List<Fact> assign(Fact f, ParserJ p) {
         int unc = f.unassCourse.size();
         int unl = f.unassLab.size();
         List<Fact> test = new ArrayList<>();
