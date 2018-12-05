@@ -417,7 +417,7 @@ public class Main {
         }
         return f;
     }
-
+    //hello
     public static List<Fact> assign(Fact f, ParserJ p) {
         int unc = f.unassCourse.size();
         int unl = f.unassLab.size();
