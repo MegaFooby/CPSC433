@@ -1,0 +1,36 @@
+CPSC 471 TUT 04             : FR, 18:00
+CPSC 481 LEC 01 TUT 01      : FR, 10:00
+CPSC 481 LEC 01 TUT 01      : FR, 12:00
+CPSC 481 LEC 01 TUT 01      : FR, 14:00
+CPSC 481 LEC 01 TUT 01      : FR, 16:00
+CPSC 510 TUT 01             : FR, 08:00
+CPSC 511 TUT 01             : TU, 20:00
+CPSC 517 TUT 01             : TU, 19:00
+CPSC 519 TUT 01             : TU, 18:00
+CPSC 523 TUT 01             : TU, 16:00
+CPSC 525 TUT 01             : TU, 15:00
+CPSC 557 TUT 01             : TU, 13:00
+CPSC 559 TUT 01             : TU, 12:00
+CPSC 559 TUT 02             : TU, 10:00
+CPSC 565 TUT 01             : TU, 09:00
+CPSC 565 TUT 02             : TU, 18:30
+CPSC 581 TUT 01             : TU, 17:00
+CPSC 581 TUT 02             : TU, 15:30
+CPSC 587 TUT 01             : TU, 14:00
+CPSC 587 TUT 02             : TU, 12:30
+CPSC 589 TUT 01             : TU, 11:00
+CPSC 589 TUT 02             : TU, 09:30
+CPSC 591 TUT 01             : TU, 08:00
+CPSC 591 TUT 02             : MO, 20:00
+CPSC 594 TUT 01             : MO, 19:00
+SENG 311 TUT 01             : MO, 18:00
+SENG 311 TUT 02             : MO, 17:00
+SENG 311 TUT 03             : MO, 16:00
+SENG 411 TUT 01             : MO, 15:00
+SENG 411 TUT 02             : MO, 14:00
+SENG 411 TUT 03             : MO, 13:00
+SENG 411 TUT 04             : MO, 12:00
+SENG 411 TUT 05             : MO, 11:00
+SENG 511 TUT 01             : MO, 10:00
+SENG 511 TUT 02             : MO, 09:00
+SENG 513 TUT 01             : MO, 08:00

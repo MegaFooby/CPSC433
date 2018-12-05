@@ -1,0 +1,25 @@
+Eval = 0
+
+#needs minimum classes in certain time slots
+for s in range(slots):
+    if num_of_courses(s) < coursemin(s):
+        Eval -= pen_coursemin*(coursemin(s) - num_of_courses(s))
+    if num_of_labs(s) < labmin(s):
+        Eval -= pen_labmin*(labmin(s) - num_of_labs(s))
+
+#professor time slot preference
+for prof in professor:
+    for class in prof.classes:
+        pref_used = false
+        for pref in prof.pref:
+            if pref == class.getslot():
+                pref_used = true
+                break
+        if !pref_used:
+            Eval -= prof.assign
+
+#schedule courses at the same time
+for pair in pairs:
+    if pair(a).getslot() != pair(b).getslot():
+        Eval -= pen_notpaired
+        break
