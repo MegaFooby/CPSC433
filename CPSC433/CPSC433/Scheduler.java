@@ -149,6 +149,14 @@ public class Scheduler {
             pen_labmin = Integer.parseInt(cmd.getOptionValue("plm"));
         if(cmd.hasOption("pnp"))
             pen_notpaired = Integer.parseInt(cmd.getOptionValue("pnp"));
+	if(cmd.hasOption("wmf"))
+            w_minfilled = Integer.parseInt(cmd.getOptionValue("wmf"));
+        if(cmd.hasOption("wpf"))
+            w_pref = Integer.parseInt(cmd.getOptionValue("wpf"));
+        if(cmd.hasOption("wpa"))
+            w_pair = Integer.parseInt(cmd.getOptionValue("wpa"));
+        if(cmd.hasOption("wsd"))
+            w_secdiff = Integer.parseInt(cmd.getOptionValue("wsd"));
         if(cmd.hasOption("d")) debug = true;
 
         Parser parse = new Parser(args[0]);
