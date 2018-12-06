@@ -75,6 +75,16 @@ public class APair {
             this.tsec1 = -1;
             this.tsec2 = Integer.parseInt(arr2[3].trim());
         }
+         else if(arr1[2].equals("TUT") && arr2[2].equals("LEC")){
+            this.fac1 = arr1[0].trim();
+            this.fac2 = arr2[0].trim();
+            this.cnum1 = Integer.parseInt(arr1[1].trim());
+            this.cnum2 = Integer.parseInt(arr2[1].trim());
+            this.lsec2 = Integer.parseInt(arr1[3].trim());
+            this.lsec1 = -1;
+            this.tsec2 = -1;
+            this.tsec1 = Integer.parseInt(arr2[3].trim());
+        }
         else if(arr1[2].equals("TUT") && arr2[2].equals("TUT")){
             this.fac1 = arr1[0].trim();
             this.fac2 = arr2[0].trim();
