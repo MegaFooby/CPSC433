@@ -1,3 +1,5 @@
+//package org.apache.commons.cli;
+
 import org.apache.commons.cli.*;
 
 import java.io.FileNotFoundException;
@@ -237,9 +239,9 @@ public class Main {
     		time_split = tmp_start.split(":");
     		int hr = (Integer.parseInt(time_split[0]));
     		int min = (Integer.parseInt(time_split[1]));
-    		int 500count = 0;
-    		boolean 813_flag = false;
-    		boolean 913_flag = false;
+    		int count500 = 0;
+    		boolean flag_813 = false;
+    		boolean flag_913 = false;
 
         	
             for (Course course : cs.courses) {
@@ -250,17 +252,17 @@ public class Main {
         		
             	if(tmp_faculty.equals("CPSC")) {
             		if(tmp_day.equals("TU") && tmp_start.equals("11:30")) return false;
-            		if(tmp_lsec == 9 && hr =< 17) return false;
-            		if(tmp_cnum => 500) {
-            			500count++;
+            		if(tmp_lsec == 9 && hr <= 17 ) return false;
+            		if(tmp_cnum >= 500) {
+            			count500++;
             		}
-            		if(500count > 1) return false;
+            		if(count500 > 1) return false;
             		if(tmp_cnum == 813) {
-            			813_flag = true;
+            			flag_813 = true;
             			if(hr != 18 && min != 00) return false;
             		}
             		if(tmp_cnum == 913) {
-            			913_flag = true;
+            			flag_913 = true;
             			if(hr != 18 && min != 00) return false;
             		}
             		
@@ -268,7 +270,7 @@ public class Main {
             		
             	}
             	
-                for (LabSlot l : f.labSlotList) {
+                for (LabSlot l : f.labsSlotList) {
                 	if (l.getDay().equals(tmp_day) && l.getStart().equals(tmp_start)) {
                 		for(Lab lb : l.labs) {
                 			if(lb.getFaculty().equals(tmp_faculty) && lb.getCourseNum() == tmp_cnum && lb.getLecSec() == tmp_lsec)
@@ -279,6 +281,8 @@ public class Main {
                     
                 }
             }
+        }
+        return true;
         }
 
     public static boolean unwanted(Course c, CourseSlot cs, ParserJ p){
