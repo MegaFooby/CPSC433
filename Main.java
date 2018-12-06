@@ -132,7 +132,7 @@ public class Main {
             }
         }
         Fact bestf = null;
-        for(Fact b : sols){
+        for(Fact b : res){
             int t = eval(b);
             if(t < best){
                 best = t;
@@ -229,84 +229,58 @@ public class Main {
         }
         //check all elements of the courses that are assigned then check
         //if name, number, lecnum equal, then the lab\class cannot be assigned to the same slot
+        //don't have to check the other way because we only do contr on complete facts
         for(CourseSlot cs : f.courseSlotList) {
+        	String tmp_day = cs.getDay();
+        	String tmp_start = cs.getStart();
+        	String[] time_split = new String[2];
+    		time_split = tmp_start.split(":");
+    		int hr = (Integer.parseInt(time_split[0]));
+    		int min = (Integer.parseInt(time_split[1]));
+    		int 500count = 0;
+    		boolean 813_flag = false;
+    		boolean 913_flag = false;
+
+        	
             for (Course course : cs.courses) {
-                if (f.unassCourse.contains(course)) {
-                    return false;
-                }
-            }
-        }
-        for(LabSlot cs : f.labsSlotList) {
-            for (Lab course : cs.labs) {
-                if (f.unassLab.contains(course)) {
-                    return false;
-                }
-            }
-        }
-        //departmental contraints
-        for(Course c : f.unassCourse){
-            if(c.getFaculty().equals("CPSC")) {
-                if (this.unassigned.get(coursenum).is_lecture && this.slots[slotnum].time == 21130) return false;
+            	String tmp_faculty = course.getFaculty();
+            	int tmp_cnum = course.getCourseNum();
+            	int tmp_lsec = course.getLecSec();
 
-                if (this.unassigned.get(coursenum).lecture_num == 9) {
-                    if (this.slots[slotnum].time < 51800 && this.slots[slotnum].time > 50000) return false;
-                    else if (this.slots[slotnum].time < 21800 && this.slots[slotnum].time > 20000) return false;
-                    else if (this.slots[slotnum].time < 11800 && this.slots[slotnum].time > 10000) return false;
-                }
-                if (this.unassigned.get(coursenum).lecture_num == 813 && this.unassigned.get(coursenum).is_lecture && this.slots[slotnum].time != 21800)
-                    return false;
-                if (this.unassigned.get(coursenum).lecture_num == 813 && this.unassigned.get(coursenum).is_lecture && this.slots[slotnum].time != 21800)
-                    return false;
-                if (this.unassigned.get(coursenum).lecture_num == 813 && !this.unassigned.get(coursenum).is_lecture) {
-                    //traverse not compatible vector to see for any conflicts.
-                    for (CoursePair cp : parse.not_compatible) {
-                        if (cp.first.name.equals("CPSC") && cp.first.number == 313) {
-                            this.conflict.add(cp.second);
-                        }
-                        if (cp.second.name.equals("CPSC") && cp.second.number == 313) {
-                            this.conflict.add(cp.first);
-                        }
-                    }
-                    for (Course c : this.slots[slotnum].course) {
-                        if (!this.conflict.isEmpty()) {
-                            for (Course con : this.conflict) {
-                                if (con.equals(c)) {
-                                    return false;
-                                }
-                            }
-                        }
-                        if (c.name.equals("CPSC") && c.number == 313) return false;
-                    }
-                }
-            }
-            if(this.unassigned.get(coursenum).lecture_num == 913 && !this.unassigned.get(coursenum).is_lecture){
-                //traverse not compatible vector to see for any conflicts.
-                for(CoursePair cp : parse.not_compatible){
-                    if(cp.first.name.equals("CPSC") && cp.first.number == 413) {
-                        this.conflict.add(cp.second);
-                    }
-                    if(cp.second.name.equals("CPSC") && cp.second.number == 413) {
-                        this.conflict.add(cp.first);
-                    }
-                }
-                for(Course c : slots[slotnum].course){
-                    if(!this.conflict.isEmpty()){
-                        for(Course con : this.conflict){
-                            if(con.equals(c)){
-                                return false;
-                            }
-                        }
-                    }
-                    if(c.name.equals("CPSC") && c.number == 413) return false;
+        		
+            	if(tmp_faculty.equals("CPSC")) {
+            		if(tmp_day.equals("TU") && tmp_start.equals("11:30")) return false;
+            		if(tmp_lsec == 9 && hr =< 17) return false;
+            		if(tmp_cnum => 500) {
+            			500count++;
+            		}
+            		if(500count > 1) return false;
+            		if(tmp_cnum == 813) {
+            			813_flag = true;
+            			if(hr != 18 && min != 00) return false;
+            		}
+            		if(tmp_cnum == 913) {
+            			913_flag = true;
+            			if(hr != 18 && min != 00) return false;
+            		}
+            		
+            		
+            		
+            	}
+            	
+                for (LabSlot l : f.labSlotList) {
+                	if (l.getDay().equals(tmp_day) && l.getStart().equals(tmp_start)) {
+                		for(Lab lb : l.labs) {
+                			if(lb.getFaculty().equals(tmp_faculty) && lb.getCourseNum() == tmp_cnum && lb.getLecSec() == tmp_lsec)
+                				return false;
+                		}
+                	}
+
+                    
                 }
             }
         }
 
-        if(this.unassigned.get(coursenum).is_lecture) slots[slotnum].asscourse++;
-        else slots[slotnum].asslab++;
-
-        return true;
-    }
     public static boolean unwanted(Course c, CourseSlot cs, ParserJ p){
         boolean result = true;
         for(Unwanted u : p.unwanted){
