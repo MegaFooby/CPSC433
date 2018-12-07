@@ -433,13 +433,12 @@ public class Main {
         	}
         	if(ls.min > lnum) score += Main.pen_labmin;
         }
-        return score
+        return score;
 /*
         if(this.slots[slot].coursemax != 0 & this.slots[slot].coursemin != 0) lecFlag = true;
         if(this.slots[slot].labmax != 0 & this.slots[slot].labmin != 0) labFlag = true;
         if(this.slots[slot].coursemax < cnum & lecFlag) {
             return Integer.MIN_VALUE;
-
         }
         if(this.slots[slot].labmax < lnum & labFlag) {
             return Integer.MIN_VALUE;
@@ -451,57 +450,103 @@ public class Main {
             int labcount = lnum;
             if(s.coursemin > leccount) score += Scheduler.pen_coursemin;
             if(s.labmin > labcount) score += Scheduler.pen_labmin;
-
         }
         return score;*/
     }
-    public int eval_pref(Fact f : ParserJ parse){
+    public int eval_pref(Fact f, ParserJ parse){
         int nonpref = 0;
-        for(CourseSlot cs : f.courseSlotList){
+        for(CourseSlot s : f.courseSlotList){
             for(Preference p : parse.preferences){
-                for(Course c : cs.course){
-                    if (c.equals(p.course) && s.time != p.time){
-                        nonpref += p.value;
+                for(Course c : s.courses){
+                    if (c.getCourseNum() == p.getCourseNum() && s.getStart() != p.getTime()){
+                        nonpref += p.getWeight();
                     }
                 }
             }
         }
+        for (LabSlot l : f.labsSlotList) {
+        	for (Preference p : parse.preferences) {
+        		for (Lab t : l.labs) {
+        			if (t.getCourseNum() == p.getCourseNum() && l.getStart() != p.getTime()) {
+        				nonpref += p.getWeight();
+        			}
+        		}
+        	}
+        }
         return nonpref;
     }
-    public int eval_pair(ParserJ parse){
+    
+    public int eval_pair(Fact f, ParserJ parse){
         int score = 0;
-        for(CoursePair cp : parse.pair){
-            for(Slot s : this.slots){
-                if(s.course.contains(cp.first) && !(s.course.contains(cp.second))){
-                    score += Scheduler.pen_notpaired;
+        for(APair cp : parse.pairs){
+            for(CourseSlot s : f.courseSlotList){
+                if(s.courses.contains(new Course(cp.getFaculty1(), cp.getCourseNum1(), cp.getLecSec1())) && 
+                !s.courses.contains(new Course(cp.getFaculty2(), cp.getCourseNum2(), cp.getLecSec2()))){
+                    score += pen_notpaired;
                 }
-                if(s.course.contains(cp.second) && !(s.course.contains(cp.first))){
-                    score += Scheduler.pen_notpaired;
+                if(s.courses.contains(new Course(cp.getFaculty2(), cp.getCourseNum2(), cp.getLecSec2())) && 
+                !s.courses.contains(new Course(cp.getFaculty1(), cp.getCourseNum1(), cp.getLecSec1()))){
+                    score += pen_notpaired;
                 }
             }
         }
+        
+        for(APair cp : parse.pairs){
+            for(LabSlot s : f.labsSlotList){
+                if(s.labs.contains(new Course(cp.getFaculty1(), cp.getCourseNum1(), cp.getTutSec1())) && 
+                !s.labs.contains(new Course(cp.getFaculty2(), cp.getCourseNum2(), cp.getTutSec2()))){
+                    score += Main.pen_notpaired;
+                }
+                if(s.labs.contains(new Course(cp.getFaculty2(), cp.getCourseNum2(), cp.getTutSec2())) && 
+                !s.labs.contains(new Course(cp.getFaculty1(), cp.getCourseNum1(), cp.getTutSec1()))){
+                    score += Main.pen_notpaired;
+                }
+            }
+        }
+        
         return score;
     }
-    public int eval_secdiff(Parser parse){
+    
+    public int eval_secdiff(ParserJ parse){
         int score = 0;
-        int[] checked = new int[parse.courses.size()];
-        int i = 0;
+        int[] checkedc = new int[parse.courses.size()];
+        int[] checkedl = new int[parse.labs.size()];
+        int i = 0, m = 0;
         for(Course c : parse.courses){
             for(Course k : parse.courses){
                 boolean notin = false;
-                for(int j : checked){
-                    if(c.number == j){
+                for(int j : checkedc){
+                    if(c.getCourseNum() == j){
                         notin = true;
                         break;
                     }
                 }
-                if(c.number == k.number & c.lecture_num != k.lecture_num && notin){
-                    score += Scheduler.pen_secdiff;
-                    checked[i] = c.number;
+                if(c.getCourseNum() == k.getCourseNum() & c.getLecSec() != k.getLecSec() && notin){
+                    score += pen_secdiff;
+                    checkedc[i] = c.getCourseNum();
                 }
             }
             i++;
         }
+        
+        for(Lab l : parse.labs){
+            for(Lab k : parse.labs){
+                boolean notin = false;
+                for(int n : checkedl){
+                    if(l.getCourseNum() == n){
+                        notin = true;
+                        break;
+                    }
+                }
+                if(l.getCourseNum() == k.getCourseNum() & l.getLecSec() != k.getLecSec() && notin){
+                    score += pen_secdiff;
+                    checkedc[i] = l.getCourseNum();
+                }
+            }
+            m++;
+        }
+        
+        
         return score;
     }
 }
