@@ -403,4 +403,105 @@ public class Main {
         test.add(tree_course(f, p, test));
         return test;
     }
+    public void eval(Fact f, ParserJ p) {
+    	
+    }
+    public int eval_minfilled(Fact f){
+        int cnum = 0, lnum = 0, score = 0;
+        boolean lecFlag = false;
+        boolean labFlag = false;
+        for(CourseSlot cs : f.courseSlotList ) {
+        	cnum = 0;
+        	if(cs.max != 0 && cs.min != 0) lecFlag = true;
+        	for(Course c : cs.courses) {
+                cnum++;
+        	}
+        	if(cs.max < cnum && lecFlag) {
+        		return Integer.MIN_VALUE;
+        	}
+        	if(cs.min > cnum) score += Main.pen_coursemin;
+        	
+        }
+        for(LabSlot ls : f.labsSlotList) {
+        	lnum = 0;
+        	if(ls.max != 0 && ls.min != 0) labFlag = true;
+        	for(Lab l : ls.labs) {
+        		lnum++;
+        	}
+        	if(ls.max < lnum && labFlag) {
+        		return Integer.MIN_VALUE;
+        	}
+        	if(ls.min > lnum) score += Main.pen_labmin;
+        }
+        return score
+/*
+        if(this.slots[slot].coursemax != 0 & this.slots[slot].coursemin != 0) lecFlag = true;
+        if(this.slots[slot].labmax != 0 & this.slots[slot].labmin != 0) labFlag = true;
+        if(this.slots[slot].coursemax < cnum & lecFlag) {
+            return Integer.MIN_VALUE;
+
+        }
+        if(this.slots[slot].labmax < lnum & labFlag) {
+            return Integer.MIN_VALUE;
+        }
+     for(Slot s : this.slots){
+            if(s.course.size() == 0) break;
+            int min = s.coursemin;
+            int leccount = cnum;
+            int labcount = lnum;
+            if(s.coursemin > leccount) score += Scheduler.pen_coursemin;
+            if(s.labmin > labcount) score += Scheduler.pen_labmin;
+
+        }
+        return score;*/
+    }
+    public int eval_pref(Fact f : ParserJ parse){
+        int nonpref = 0;
+        for(CourseSlot cs : f.courseSlotList){
+            for(Preference p : parse.preferences){
+                for(Course c : cs.course){
+                    if (c.equals(p.course) && s.time != p.time){
+                        nonpref += p.value;
+                    }
+                }
+            }
+        }
+        return nonpref;
+    }
+    public int eval_pair(ParserJ parse){
+        int score = 0;
+        for(CoursePair cp : parse.pair){
+            for(Slot s : this.slots){
+                if(s.course.contains(cp.first) && !(s.course.contains(cp.second))){
+                    score += Scheduler.pen_notpaired;
+                }
+                if(s.course.contains(cp.second) && !(s.course.contains(cp.first))){
+                    score += Scheduler.pen_notpaired;
+                }
+            }
+        }
+        return score;
+    }
+    public int eval_secdiff(Parser parse){
+        int score = 0;
+        int[] checked = new int[parse.courses.size()];
+        int i = 0;
+        for(Course c : parse.courses){
+            for(Course k : parse.courses){
+                boolean notin = false;
+                for(int j : checked){
+                    if(c.number == j){
+                        notin = true;
+                        break;
+                    }
+                }
+                if(c.number == k.number & c.lecture_num != k.lecture_num && notin){
+                    score += Scheduler.pen_secdiff;
+                    checked[i] = c.number;
+                }
+            }
+            i++;
+        }
+        return score;
+    }
 }
